@@ -5,6 +5,7 @@
 #include <QProcess>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QVBoxLayout>
 
 class AppDownloadBaseDialog : public QDialog
 {
@@ -15,14 +16,17 @@ public:
 
 protected:
     void startDownloadProcess(const QStringList &args,
-                              const QString &workingDir);
-    void checkDownloadProgress();
+                              const QString &workingDir, int index);
+    void checkDownloadProgress(const QString &logFilePath,
+                               const QString &appName,
+                               const QString &outputDir);
+    void addProgressBar(int index);
     QProgressBar *m_progressBar;
     QTimer *m_progressTimer;
-    QString m_logFilePath;
     QProcess *m_downloadProcess;
     QString m_appName;
     QPushButton *m_actionButton;
+    QVBoxLayout *m_layout;
 };
 
 #endif // APPDOWNLOADBASEDIALOG_H

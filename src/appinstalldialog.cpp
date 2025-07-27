@@ -110,10 +110,11 @@ void AppInstallDialog::onInstallClicked()
                              "Please connect a device first.");
         return;
     }
+    m_deviceCombo->setEnabled(false);
     QString selectedDevice = m_deviceCombo->currentData().toString();
     QStringList args = {"download",
-                        "-i",
-                        "553834731",
+                        "-b",
+                        m_bundleId,
                         "-o",
                         "./",
                         "--purchase",
@@ -121,5 +122,12 @@ void AppInstallDialog::onInstallClicked()
                         "iDescriptor",
                         "--format",
                         "json"};
-    startDownloadProcess(args, QDir::currentPath());
+    m_actionButton->setEnabled(false);
+
+    int buttonIndex = m_layout->indexOf(m_actionButton);
+    layout()->removeWidget(m_actionButton);
+    m_actionButton->deleteLater();
+    m_actionButton = nullptr; // Reset to avoid double deletion
+
+    startDownloadProcess(args, QDir::currentPath(), buttonIndex);
 }

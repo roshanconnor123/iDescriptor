@@ -1,14 +1,17 @@
 #include "appdownloaddialog.h"
+#include "clickablelabel.h"
+#include <QDesktopServices>
 #include <QFileDialog>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
 
 AppDownloadDialog::AppDownloadDialog(const QString &appName,
+                                     const QString &bundleId,
                                      const QString &description,
                                      QWidget *parent)
     : AppDownloadBaseDialog(appName, parent),
-      m_outputDir(QDir::homePath().append("/Downloads"))
+      m_outputDir(QDir::homePath().append("/Downloads")), m_bundleId(bundleId)
 {
     setWindowTitle("Download " + appName + " IPA");
     setModal(true);
@@ -28,8 +31,13 @@ AppDownloadDialog::AppDownloadDialog(const QString &appName,
     dirTextLabel->setStyleSheet("font-size: 14px; color: #333;");
     dirLayout->addWidget(dirTextLabel);
 
-    m_dirLabel = new QLabel(m_outputDir);
+    m_dirLabel = new ClickableLabel(this);
+    m_dirLabel->setText(m_outputDir);
     m_dirLabel->setStyleSheet("font-size: 14px; color: #007AFF;");
+    connect(m_dirLabel, &ClickableLabel::clicked, this, [this]() {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(m_outputDir));
+    });
+    m_dirLabel->setCursor(Qt::PointingHandCursor);
     dirLayout->addWidget(m_dirLabel, 1);
 
     m_dirButton = new QPushButton("Choose...");
@@ -68,9 +76,15 @@ void AppDownloadDialog::onDownloadClicked()
 {
     // Disable directory selection once download starts
     m_dirButton->setEnabled(false);
+    m_actionButton->setEnabled(false);
+
+    int buttonIndex = m_layout->indexOf(m_actionButton);
+    layout()->removeWidget(m_actionButton);
+    m_actionButton->deleteLater();
+
     QStringList args = {"download",
-                        "-i",
-                        "553834731",
+                        "-b",
+                        m_bundleId,
                         "-o",
                         m_outputDir,
                         "--purchase",
@@ -78,5 +92,5 @@ void AppDownloadDialog::onDownloadClicked()
                         "iDescriptor",
                         "--format",
                         "json"};
-    startDownloadProcess(args, m_outputDir);
+    startDownloadProcess(args, m_outputDir, buttonIndex);
 }

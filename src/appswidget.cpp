@@ -132,6 +132,7 @@ void AppsWidget::setupUI()
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
     process.setProcessEnvironment(env);
     // process.
+    // TODO: keychain passphrase
     process.start("ipatool", QStringList()
                                  << "auth" << "info" << "--non-interactive"
                                  << "--format" << "json"
@@ -217,24 +218,24 @@ void AppsWidget::setupUI()
     gridLayout->setSpacing(20);
 
     // Create sample app cards
-    createAppCard("Instagram", "Photo & Video sharing social network", "",
-                  gridLayout, 0, 0);
-    createAppCard("WhatsApp", "Free messaging and video calling", "",
-                  gridLayout, 0, 1);
-    createAppCard("Spotify", "Music streaming and podcast platform", "",
-                  gridLayout, 0, 2);
-    createAppCard("YouTube", "Video sharing and streaming platform", "",
-                  gridLayout, 1, 0);
-    createAppCard("Twitter", "Social media and microblogging", "", gridLayout,
-                  1, 1);
-    createAppCard("TikTok", "Short-form video hosting service", "", gridLayout,
-                  1, 2);
-    createAppCard("Discord", "Voice, video and text communication", "",
+    createAppCard("Instagram", "com.burbn.instagram",
+                  "Photo & Video sharing social network", "", gridLayout, 0, 0);
+    createAppCard("WhatsApp", "net.whatsapp.WhatsApp",
+                  "Free messaging and video calling", "", gridLayout, 0, 1);
+    createAppCard("Spotify", "com.spotify.client",
+                  "Music streaming and podcast platform", "", gridLayout, 0, 2);
+    createAppCard("YouTube", "com.google.ios.youtube",
+                  "Video sharing and streaming platform", "", gridLayout, 1, 0);
+    createAppCard("X", "com.atebits.Tweetie2", "Social media and microblogging",
+                  "", gridLayout, 1, 1);
+    createAppCard("TikTok", "com.zhiliaoapp.musically",
+                  "Short-form video hosting service", "", gridLayout, 1, 2);
+    createAppCard("Twitch", "tv.twitch", "Live streaming platform", "",
                   gridLayout, 2, 0);
-    createAppCard("Telegram", "Cloud-based instant messaging", "", gridLayout,
-                  2, 1);
-    createAppCard("Reddit", "Social news aggregation platform", "", gridLayout,
-                  2, 2);
+    createAppCard("Telegram", "ph.telegra.Telegraph",
+                  "Cloud-based instant messaging", "", gridLayout, 2, 1);
+    createAppCard("Reddit", "com.reddit.Reddit",
+                  "Social news aggregation platform", "", gridLayout, 2, 2);
 
     gridLayout->setRowStretch(gridLayout->rowCount(), 1);
 
@@ -242,7 +243,8 @@ void AppsWidget::setupUI()
     mainLayout->addWidget(m_scrollArea);
 }
 
-void AppsWidget::createAppCard(const QString &name, const QString &description,
+void AppsWidget::createAppCard(const QString &name, const QString &bundleId,
+                               const QString &description,
                                const QString &iconPath, QGridLayout *gridLayout,
                                int row, int col)
 {
@@ -297,7 +299,7 @@ void AppsWidget::createAppCard(const QString &name, const QString &description,
         [this, name, description]() { onAppCardClicked(name, description); });
 
     connect(downloadIpaLabel, &QPushButton::clicked, this,
-            [this, name]() { onDownloadIpaClicked(name); });
+            [this, name, bundleId]() { onDownloadIpaClicked(name, bundleId); });
 
     cardLayout->addWidget(installLabel);
     cardLayout->addWidget(downloadIpaLabel);
@@ -309,10 +311,11 @@ void AppsWidget::createAppCard(const QString &name, const QString &description,
 
     gridLayout->addWidget(cardFrame, row, col);
 }
-void AppsWidget::onDownloadIpaClicked(const QString &name)
+void AppsWidget::onDownloadIpaClicked(const QString &name,
+                                      const QString &bundleId)
 {
     QString description = "Download the IPA file for " + name;
-    AppDownloadDialog dialog(name, description, this);
+    AppDownloadDialog dialog(name, bundleId, description, this);
     dialog.exec();
 }
 

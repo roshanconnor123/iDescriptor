@@ -40,13 +40,13 @@ public:
 private slots:
     void onLoginClicked();
     void onAppCardClicked(const QString &appName, const QString &description);
-    void onDownloadIpaClicked(const QString &name);
+    void onDownloadIpaClicked(const QString &name, const QString &bundleId);
 
 private:
     void setupUI();
-    void createAppCard(const QString &name, const QString &description,
-                       const QString &iconPath, QGridLayout *gridLayout,
-                       int row, int col);
+    void createAppCard(const QString &name, const QString &bundleId,
+                       const QString &description, const QString &iconPath,
+                       QGridLayout *gridLayout, int row, int col);
     QScrollArea *m_scrollArea;
     QWidget *m_contentWidget;
     QPushButton *m_loginButton;

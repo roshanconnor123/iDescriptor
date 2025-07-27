@@ -18,6 +18,7 @@ private slots:
 
 private:
     QComboBox *m_deviceCombo;
+    QString m_bundleId;
     void updateDeviceList();
 };
 

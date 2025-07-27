@@ -2,6 +2,7 @@
 #define APPDOWNLOADDIALOG_H
 
 #include "appdownloadbasedialog.h"
+#include "clickablelabel.h"
 #include <QDialog>
 #include <QLabel>
 #include <QPushButton>
@@ -10,7 +11,7 @@ class AppDownloadDialog : public AppDownloadBaseDialog
 {
     Q_OBJECT
 public:
-    explicit AppDownloadDialog(const QString &appName,
+    explicit AppDownloadDialog(const QString &appName, const QString &bundleId,
                                const QString &description,
                                QWidget *parent = nullptr);
 
@@ -20,7 +21,8 @@ private slots:
 private:
     QString m_outputDir;
     QPushButton *m_dirButton;
-    QLabel *m_dirLabel;
+    ClickableLabel *m_dirLabel;
+    QString m_bundleId;
 };
 
 #endif // APPDOWNLOADDIALOG_H

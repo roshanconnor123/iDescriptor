@@ -124,13 +124,6 @@
         <string>Apps</string>
        </attribute>
        <layout class="QVBoxLayout" name="appsTabLayout">
-        <item>
-         <widget class="QLabel" name="appsLabel">
-          <property name="text">
-           <string>Apps will be here</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="toolboxTab">
@@ -138,13 +131,6 @@
         <string>Toolbox</string>
        </attribute>
        <layout class="QVBoxLayout" name="toolboxTabLayout">
-        <item>
-         <widget class="QLabel" name="toolboxLabel">
-          <property name="text">
-           <string>Toolbox will be here</string>
-          </property>
-         </widget>
-        </item>
        </layout>
       </widget>
        <widget class="QWidget" name="jailbrokenTab">
