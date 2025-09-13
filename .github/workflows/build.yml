@@ -48,6 +48,7 @@ jobs:
             libssl-dev \
             libtool-bin \
             libreadline-dev \
+            libavahi-compat-libdnssd-dev \
 
       # required version is '>= 2.6.0'
       - name: Install libplist
