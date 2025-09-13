@@ -55,6 +55,7 @@ jobs:
             libgstreamer1.0-dev \
             libgstreamer-plugins-base1.0-dev \
             libfuse2 \
+            libunwind-dev \
 
       # required version is '>= 2.6.0'
       - name: Install libplist
