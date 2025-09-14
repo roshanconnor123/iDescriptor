@@ -14,22 +14,24 @@ AppContext *AppContext::sharedInstance()
 
 AppContext::AppContext(QObject *parent) : QObject{parent}
 {
-    QDBusConnection bus = QDBusConnection::systemBus();
+    // TODO: IMPLEMENT
+    // QDBusConnection bus = QDBusConnection::systemBus();
 
-    // Connect to the logind Manager's PrepareForSleep signal
-    bool connected = bus.connect("org.freedesktop.login1",  // service
-                                 "/org/freedesktop/login1", // object path
-                                 "org.freedesktop.login1.Manager", // interface
-                                 "PrepareForSleep", // signal name
-                                 this,              // receiver
-                                 SLOT(handleDBusSignal(QDBusMessage &)) // slot
-    );
+    // // Connect to the logind Manager's PrepareForSleep signal
+    // bool connected = bus.connect("org.freedesktop.login1",  // service
+    //                              "/org/freedesktop/login1", // object path
+    //                              "org.freedesktop.login1.Manager", //
+    //                              interface "PrepareForSleep", // signal name
+    //                              this,              // receiver
+    //                              SLOT(handleDBusSignal(QDBusMessage &)) //
+    //                              slot
+    // );
 
-    if (!connected) {
-        qDebug() << "Failed to connect to PrepareForSleep signal.";
-    } else {
-        qDebug() << "Successfully connected to PrepareForSleep signal.";
-    }
+    // if (!connected) {
+    //     qDebug() << "Failed to connect to PrepareForSleep signal.";
+    // } else {
+    //     qDebug() << "Successfully connected to PrepareForSleep signal.";
+    // }
 }
 
 bool AppContext::noDevicesConnected() const
