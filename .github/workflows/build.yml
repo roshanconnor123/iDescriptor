@@ -11,9 +11,12 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-22.04, windows-2019]
         # os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.os == 'windows-2019' && 'msys2 {0}' || 'bash' }}
 
     steps:
       - name: Checkout repository
@@ -22,13 +25,44 @@ jobs:
           submodules: 'recursive'
           token: ${{ secrets.PAT }}
 
-      - name: Install Qt
+      - name: Setup MSYS2 (Windows)
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          release: false
+          update: false
+          install: >-
+            base-devel
+            git
+            mingw-w64-x86_64-gcc
+            make
+            libtool
+            autoconf
+            automake-wrapper
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-qt6-base
+            mingw-w64-x86_64-qt6-svg
+            mingw-w64-x86_64-qt6-multimedia
+            mingw-w64-x86_64-qt6-location
+            mingw-w64-x86_64-qt6-positioning
+            mingw-w64-x86_64-qt6-serialport
+            mingw-w64-x86_64-pugixml
+            mingw-w64-x86_64-libusb
+            mingw-w64-x86_64-qrencode
+            mingw-w64-x86_64-curl
+            mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-libzip
+
+      - name: Install Qt (Linux)
+        if: runner.os == 'Linux'
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.7.2'
           modules: 'qtmultimedia qtlocation qtpositioning qtserialport'
 
-      - name: Set up Go
+      - name: Set up Go (Linux)
+        if: runner.os == 'Linux' || runner.os == 'Windows'
         uses: actions/setup-go@v6
         with:
           go-version: '^1.23.0'
@@ -64,86 +98,53 @@ jobs:
             libxcb-cursor0 \
             libxkbcommon-x11-0 \
 
-      # required version is '>= 2.6.0'
-      - name: Install libplist
+      - name: Build libimobiledevice suite (Linux)
         if: runner.os == 'Linux'
         run: |
-          git clone https://github.com/libimobiledevice/libplist.git
-          cd libplist
-          ./autogen.sh
-          sudo make install
+          # List of repositories to build in order (dependencies first)
+          repos=("libplist" "libtatsu" "libimobiledevice-glue" "libimobiledevice" "libirecovery")
 
-      - name: Install libtatsu
-        if: runner.os == 'Linux'
-        run: |
-          git clone https://github.com/libimobiledevice/libtatsu.git
-          cd libtatsu
-          ./autogen.sh
-          sudo make install
+          for repo in "${repos[@]}"; do
+            echo "Building $repo..."
+            
+            git clone --depth=1 --recursive "https://github.com/libimobiledevice/$repo"
+            ./autogen.sh
+            sudo make install
+              
+            echo "Built $repo successfully."
+          done
 
-      - name: Install libimobiledevice-glue
-        if: runner.os == 'Linux'
+      - name: Build libimobiledevice suite (Windows)
+        if: runner.os == 'Windows'
         run: |
-          git clone https://github.com/libimobiledevice/libimobiledevice-glue.git
-          cd libimobiledevice-glue
-          ./autogen.sh
-          sudo make install
+          echo "target_triplet=`gcc -dumpmachine`" >> $GITHUB_ENV
+          git config --global core.autocrlf false
 
-      - name: Install libimobiledevice
-        if: runner.os == 'Linux'
-        run: |
-          git clone https://github.com/libimobiledevice/libimobiledevice.git
-          cd libimobiledevice
-          ./autogen.sh
-          sudo make install
+          # List of repositories to build in order (dependencies first)
+          repos=("libplist" "libimobiledevice-glue" "libusbmuxd" "libtatsu" "libimobiledevice" "libirecovery")
 
-      - name: Install libirecovery
-        if: runner.os == 'Linux'
-        run: |
-          git clone https://github.com/libimobiledevice/libirecovery.git
-          cd libirecovery
-          ./autogen.sh
-          sudo make install
+          for repo in "${repos[@]}"; do
+            echo "Building $repo..."
+            
+            git clone --depth=1 --recursive "https://github.com/libimobiledevice/$repo"
+            ./autogen.sh CC=gcc CXX=g++ --enable-debug --without-cython
+            make -j install
+            echo "Built $repo successfully."
+          done
 
       - name: Update linker cache
         if: runner.os == 'Linux'
         run: sudo ldconfig
 
-      - name: Install macOS dependencies (brew)
-        if: runner.os == 'macOS'
-        run: |
-          brew install \
-            pkg-config \
-            pugixml \
-            libusb \
-            libplist \
-            qrencode \
-            openssl \
-            libssh \
-            libzip \
-            libimobiledevice \
-            libimobiledevice-glue \
-            irecovery
-
-      - name: Install Windows dependencies (vcpkg)
-        if: runner.os == 'Windows'
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: '1e975a6660e725c1b23f7234b02e4d94c33745e3'
-          vcpkgJsonGlob: '**/vcpkg.json' # Recommended to create a vcpkg.json
-        # If not using vcpkg.json, you can install manually:
-        # run: |
-        #   vcpkg install pugixml libusb libplist qrencode openssl libssh libzip --triplet x64-windows
-
-      - name: Configure CMake (Linux/macOS)
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      - name: Configure CMake (Linux)
+        if: runner.os == 'Linux'
         run: |
           cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DRUN_CLANG_TIDY=OFF
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
         run: |
-          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+          cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
 
       - name: Build with CMake
         run: cmake --build build --config Release
@@ -177,8 +178,16 @@ jobs:
           # Include the Go library as an additional executable/library
           ../linuxdeployqt-continuous-x86_64.AppImage iDescriptor -appimage
 
-      - name: Upload Artifact
+      - name: Upload Artifact (Linux)
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: iDescriptor-AppImage
           path: build/iDescriptor-*.AppImage
+
+      - name: Upload Artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: iDescriptor-Windows
+          path: build/iDescriptor.exe
