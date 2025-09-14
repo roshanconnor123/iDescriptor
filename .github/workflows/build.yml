@@ -108,8 +108,10 @@ jobs:
             echo "Building $repo..."
             
             git clone --depth=1 --recursive "https://github.com/libimobiledevice/$repo"
+            pushd "$repo"
             ./autogen.sh
             sudo make install
+            popd
               
             echo "Built $repo successfully."
           done
