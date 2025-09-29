@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "customtabwidget.h"
 #include "detailwindow.h"
 #include "settingswidget.h"
 #include <QDialog>
@@ -7,6 +8,7 @@
 #include <QGraphicsSvgItem>
 #include <QMessageBox>
 #include <QSvgRenderer>
+#include <QTimer>
 #include <QtSvg>
 
 #include <libimobiledevice/libimobiledevice.h>
@@ -15,6 +17,7 @@
 
 #include "appswidget.h"
 #include "devicemanagerwidget.h"
+#include "iDescriptor-ui.h"
 #include "iDescriptor.h"
 #include "libirecovery.h"
 #include "toolboxwidget.h"
@@ -24,6 +27,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QStack>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -33,6 +37,10 @@
 #include "fileexplorerwidget.h"
 #include "jailbrokenwidget.h"
 #include "recoverydeviceinfowidget.h"
+#include <QApplication>
+#include <QMenu>
+#include <QMenuBar>
+#include <QMessageBox>
 #include <libusb-1.0/libusb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -116,16 +124,67 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    setWindowTitle("iDescriptor");
+
+    // Create custom tab widget
+    m_customTabWidget = new CustomTabWidget(this);
+    m_customTabWidget->setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea,
+                                    false);
+
+    setContentsMargins(0, 0, 0, 0);
+#ifdef Q_OS_MAC
+    setupMacOSWindow(this);
+    setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea, false);
+#endif
+    setCentralWidget(m_customTabWidget);
+
+    // Create device manager and stacked widget for main tab
+    m_mainStackedWidget = new QStackedWidget();
+
+    // No devices page
+    QWidget *noDevicesPage = new QWidget();
+    QVBoxLayout *noDeviceLayout = new QVBoxLayout(noDevicesPage);
+    noDeviceLayout->addStretch();
+    QHBoxLayout *labelLayout = new QHBoxLayout();
+    labelLayout->addStretch();
+    QLabel *noDeviceLabel = new QLabel("No devices detected");
+    noDeviceLabel->setAlignment(Qt::AlignCenter);
+    labelLayout->addWidget(noDeviceLabel);
+    labelLayout->addStretch();
+    noDeviceLayout->addLayout(labelLayout);
+    noDeviceLayout->addStretch();
 
     m_deviceManager = new DeviceManagerWidget(this);
-    ui->stackedWidget->insertWidget(1, m_deviceManager);
+
+    m_mainStackedWidget->addWidget(noDevicesPage);
+    m_mainStackedWidget->addWidget(m_deviceManager);
+
     connect(m_deviceManager, &DeviceManagerWidget::updateNoDevicesConnected,
             this, &MainWindow::updateNoDevicesConnected);
 
+    // Add tabs with icons
+    QIcon deviceIcon(":/icons/MdiLightningBolt.png");
+    m_customTabWidget->addTab(m_mainStackedWidget, deviceIcon, "iDevice");
+    m_customTabWidget->addTab(new AppsWidget(this), "Apps");
+    m_customTabWidget->addTab(new ToolboxWidget(this), "Toolbox");
+
+    auto *jailbrokenWidget = new JailbrokenWidget(this);
+    m_customTabWidget->addTab(jailbrokenWidget, "Jailbroken");
+    m_customTabWidget->finalizeStyles();
+
+    // todo: is this ok ?
+    auto connection = std::make_shared<QMetaObject::Connection>();
+    *connection =
+        connect(m_customTabWidget, &CustomTabWidget::currentChanged, this,
+                [this, jailbrokenWidget, connection](int index) {
+                    if (index == 3) { // Jailbroken tab
+                        jailbrokenWidget->initWidget();
+                        QObject::disconnect(*connection);
+                    }
+                });
+
     // settings button
     QPushButton *settingsButton = new QPushButton();
-    settingsButton->setIcon(QIcon::fromTheme("preferences-system"));
+    settingsButton->setIcon(QIcon(":/icons/MingcuteSettings7Line.png"));
     settingsButton->setToolTip("Settings");
     settingsButton->setFlat(true);
     settingsButton->setCursor(Qt::PointingHandCursor);
@@ -141,23 +200,23 @@ MainWindow::MainWindow(QWidget *parent)
         settingsDialog.setLayout(layout);
         settingsDialog.exec();
     });
-    // ui->centralwidget->layout()->addWidget(settingsButton);
-    ui->mainTabWidget->widget(1)->layout()->addWidget(new AppsWidget(this));
-    ui->mainTabWidget->widget(2)->layout()->addWidget(new ToolboxWidget(this));
-    auto *jailbrokenWidget = new JailbrokenWidget(this);
-    ui->mainTabWidget->widget(3)->layout()->addWidget(jailbrokenWidget);
+    m_connectedDeviceCountLabel = new QLabel("iDescriptor: no devices");
+    m_connectedDeviceCountLabel->setContentsMargins(5, 0, 5, 0);
+    m_connectedDeviceCountLabel->setStyleSheet(
+        "QLabel:hover { background-color : #13131319; }");
 
-    // TODO: is this a good idea?
-    auto connection = std::make_shared<QMetaObject::Connection>();
-    *connection = connect(ui->mainTabWidget, &QTabWidget::currentChanged, this,
-                          [this, jailbrokenWidget, connection](int index) {
-                              if (index == 3) { // Jailbroken tab
-                                  jailbrokenWidget->initWidget();
-                                  QObject::disconnect(*connection);
-                              }
-                          });
+    ui->statusbar->addWidget(m_connectedDeviceCountLabel);
+
+    ui->statusbar->setContentsMargins(0, 0, 0, 0);
+
+    // QWidget *statusSpacer = new QWidget();
+    // statusSpacer->setSizePolicy(QSizePolicy::Expanding,
+    // QSizePolicy::Preferred);
+    // statusSpacer->setAttribute(Qt::WA_TransparentForMouseEvents);
+    // ui->statusbar->addWidget(statusSpacer);
 
     ui->statusbar->addPermanentWidget(settingsButton);
+
     irecv_error_t res_recovery =
         irecv_device_event_subscribe(&context, handleCallbackRecovery, nullptr);
 
@@ -169,16 +228,38 @@ MainWindow::MainWindow(QWidget *parent)
     if (res != IDEVICE_E_SUCCESS) {
         printf("ERROR: Unable to subscribe to device events.\n");
     }
+    createMenus();
+}
+
+void MainWindow::createMenus()
+{
+    QMenu *actionsMenu = menuBar()->addMenu("&Actions");
+
+    // Add a custom "About" action for your app
+    QAction *aboutAct = new QAction("&About iDescriptor", this);
+    connect(aboutAct, &QAction::triggered, this, [=]() {
+        QMessageBox::about(this, "About iDescriptor",
+                           "<b>iDescriptor</b><br>"
+                           "A modern device management tool.");
+    });
+    actionsMenu->addAction(aboutAct);
 }
 
 void MainWindow::updateNoDevicesConnected()
 {
     qDebug() << "Is there no devices connected? "
              << AppContext::sharedInstance()->noDevicesConnected();
-    if (AppContext::sharedInstance()->noDevicesConnected())
-        return ui->stackedWidget->setCurrentIndex(
-            0);                            // Show "No Devices Connected" page
-    ui->stackedWidget->setCurrentIndex(1); // Show device list page
+    if (AppContext::sharedInstance()->noDevicesConnected()) {
+
+        m_connectedDeviceCountLabel->setText("iDescriptor: no devices");
+        return m_mainStackedWidget->setCurrentIndex(
+            0); // Show "No Devices Connected" page
+    }
+    int deviceCount = AppContext::sharedInstance()->getConnectedDeviceCount();
+    m_connectedDeviceCountLabel->setText(
+        "iDescriptor: " + QString::number(deviceCount) +
+        (deviceCount == 1 ? " device" : " devices") + " connected");
+    m_mainStackedWidget->setCurrentIndex(1); // Show device list page
 }
 
 void MainWindow::onRecoveryDeviceAdded(QObject *recoveryDeviceInfoObj)
@@ -187,7 +268,7 @@ void MainWindow::onRecoveryDeviceAdded(QObject *recoveryDeviceInfoObj)
         // TODO: handle
         return;
     try {
-        ui->stackedWidget->setCurrentIndex(1);
+        m_mainStackedWidget->setCurrentIndex(1);
         RecoveryDeviceInfo *device =
             qobject_cast<RecoveryDeviceInfo *>(recoveryDeviceInfoObj);
         if (!device) {

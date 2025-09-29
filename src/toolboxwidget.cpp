@@ -71,6 +71,7 @@ ToolboxWidget::ToolboxWidget(QWidget *parent) : QWidget{parent}
 void ToolboxWidget::setupUI()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(5, 5, 5, 5);
 
     // Device selection section
     QHBoxLayout *deviceLayout = new QHBoxLayout();
@@ -80,6 +81,7 @@ void ToolboxWidget::setupUI()
 
     deviceLayout->addWidget(m_deviceLabel);
     deviceLayout->addWidget(m_deviceCombo);
+    deviceLayout->setContentsMargins(0, 0, 0, 0);
     deviceLayout->addStretch();
 
     mainLayout->addLayout(deviceLayout);
@@ -88,6 +90,9 @@ void ToolboxWidget::setupUI()
     m_scrollArea = new QScrollArea();
     m_scrollArea->setWidgetResizable(true);
     m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_scrollArea->setStyleSheet(
+        "QScrollArea { background: transparent; border: none; }");
+    m_scrollArea->viewport()->setStyleSheet("background: transparent;");
 
     m_contentWidget = new QWidget();
     m_gridLayout = new QGridLayout(m_contentWidget);
@@ -164,7 +169,7 @@ QWidget *ToolboxWidget::createToolbox(const QString &title,
     QFrame *frame = new QFrame();
     frame->setObjectName("toolboxFrame");
     frame->setFrameStyle(QFrame::Box);
-    frame->setStyleSheet("#toolboxFrame { border: 1px solid #ccc; "
+    frame->setStyleSheet("#toolboxFrame { "
                          "border-radius: 5px; padding: 5px; }");
     frame->setFixedSize(200, 120);
 
@@ -261,13 +266,12 @@ void ToolboxWidget::updateToolboxStates()
         toolbox->setEnabled(enabled);
 
         if (enabled) {
-            toolbox->setStyleSheet("#toolboxFrame { border: 1px solid #ccc; "
+            toolbox->setStyleSheet("#toolboxFrame { "
                                    "border-radius: 5px; padding: 5px; }");
         } else {
-            toolbox->setStyleSheet(
-                "#toolboxFrame { border: 1px solid #ccc; border-radius: 5px; "
-                "padding: "
-                "5px; background-color: #f0f0f0; color: #999; }");
+            toolbox->setStyleSheet("#toolboxFrame { border-radius: 5px; "
+                                   "padding: 5px;"
+                                   "opacity: 0.45;  }");
         }
     }
 }

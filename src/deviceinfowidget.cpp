@@ -5,6 +5,7 @@
 #include "iDescriptor-ui.h"
 #include "iDescriptor.h"
 #include <QDebug>
+#include <QGraphicsDropShadowEffect>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsView>
 #include <QGridLayout>
@@ -75,30 +76,50 @@ DeviceInfoWidget::DeviceInfoWidget(iDescriptorDevice *device, QWidget *parent)
         QString::number(device->deviceInfo.diskInfo.totalDiskCapacity /
                         (1000 * 1000 * 1000)) +
         " GB");
+
+    diskCapacityLabel->setAttribute(Qt::WA_StyledBackground, true);
+    diskCapacityLabel->setStyleSheet("background-color: rgba(0, 255, 30, 0.12);"
+                                     "padding: 4px;"
+                                     "border-radius: 4px;");
+
     m_chargingStatusLabel =
         new QLabel(device->deviceInfo.batteryInfo.isCharging ? "Charging"
                                                              : "Not Charging");
-    m_chargingStatusLabel->setStyleSheet("font-size: 1rem;");
+    m_chargingStatusLabel->setStyleSheet(
+        device->deviceInfo.batteryInfo.isCharging ? "color: green;"
+                                                  : "color: white;");
 
-    m_chargingWattsLabel =
-        new QLabel(QString::number(device->deviceInfo.batteryInfo.watts) + "W");
+    // Create the layout without a parent widget
+    QHBoxLayout *chargingLayout = new QHBoxLayout();
+    chargingLayout->setContentsMargins(0, 0, 0, 0);
+    chargingLayout->setSpacing(5);
 
-    m_cableTypeLabel =
-        new QLabel(device->deviceInfo.batteryInfo.usbConnectionType ==
-                           BatteryInfo::ConnectionType::USB
-                       ? "USB"
-                       : "USB-C");
-
+    // Create icon label
+    m_lightningIconLabel = new QLabel();
+    QPixmap lightningIcon(":/icons/MdiLightningBolt.png");
+    QPixmap scaledIcon = lightningIcon.scaled(16, 16, Qt::KeepAspectRatio,
+                                              Qt::SmoothTransformation);
+    m_lightningIconLabel->setPixmap(scaledIcon);
     m_batteryWidget =
         new BatteryWidget(device->deviceInfo.batteryInfo.currentBatteryLevel,
                           device->deviceInfo.batteryInfo.isCharging, this);
 
+    // Add the widgets to the new layout
+    chargingLayout->addWidget(m_chargingStatusLabel);
+    chargingLayout->addWidget(m_lightningIconLabel);
+    chargingLayout->addWidget(m_batteryWidget);
+
+    m_chargingWattsWithCableTypeLabel = new QLabel(
+        QString::number(device->deviceInfo.batteryInfo.watts) + "W" + "/" +
+        (device->deviceInfo.batteryInfo.usbConnectionType ==
+                 BatteryInfo::ConnectionType::USB
+             ? "USB"
+             : "USB-C"));
+
     headerLayout->addWidget(devProductType);
     headerLayout->addWidget(diskCapacityLabel);
-    headerLayout->addWidget(m_chargingStatusLabel);
-    headerLayout->addWidget(m_batteryWidget);
-    headerLayout->addWidget(m_chargingWattsLabel);
-    headerLayout->addWidget(m_cableTypeLabel);
+    headerLayout->addLayout(chargingLayout);
+    headerLayout->addWidget(m_chargingWattsWithCableTypeLabel);
 
     infoLayout->addWidget(headerWidget);
     // add spacer
@@ -107,14 +128,47 @@ DeviceInfoWidget::DeviceInfoWidget(iDescriptorDevice *device, QWidget *parent)
     // Add maximum stretch between header and grid
     infoLayout->addStretch();
 
-    // Grid for device details
+    // --- Neumorphic Grid Widget ---
+
+    // 1. Create a container for the shadows
+    QWidget *shadowContainer = new QWidget();
+    // The container must be transparent to not hide the main window background
+    shadowContainer->setStyleSheet("background: transparent;");
+    // Use a layout to make the gridWidget fill the container
+    QVBoxLayout *shadowLayout = new QVBoxLayout(shadowContainer);
+    shadowLayout->setContentsMargins(15, 15, 15,
+                                     15); // Margins to make space for shadows
+
+    // 2. Create the dark (bottom-right) shadow and apply to the container
+    QGraphicsDropShadowEffect *darkShadow = new QGraphicsDropShadowEffect();
+    darkShadow->setBlurRadius(30);
+    darkShadow->setColor(QColor(0, 0, 0, 70)); // Dark, semi-transparent color
+    darkShadow->setOffset(0, 0);
+    shadowContainer->setGraphicsEffect(darkShadow);
+
+    // 3. Create the grid widget (the main content)
     QWidget *gridWidget = new QWidget();
     gridWidget->setObjectName("infoGrid");
-    gridWidget->setStyleSheet("QWidget#infoGrid { "
-                              "   border: 1px solid #ccc; "
-                              "   border-radius: 6px; "
-                              "}");
-    QGridLayout *gridLayout = new QGridLayout();
+    // Set a background color that matches the main window, with rounded corners
+    gridWidget->setStyleSheet(
+        "QWidget#infoGrid {"
+        "    background-color: #2e2e2e;" // Match your window background
+        "    border-radius: 8px;"
+        "}");
+
+    // 4. Create the light (top-left) shadow and apply to the grid widget
+    QGraphicsDropShadowEffect *lightShadow = new QGraphicsDropShadowEffect();
+    lightShadow->setBlurRadius(30);
+    lightShadow->setColor(
+        QColor(255, 255, 255, 40)); // Light, semi-transparent color
+    lightShadow->setOffset(0, 0);
+    gridWidget->setGraphicsEffect(lightShadow);
+
+    // Add gridWidget to the container's layout
+    shadowLayout->addWidget(gridWidget);
+
+    QGridLayout *gridLayout =
+        new QGridLayout(gridWidget); // Set layout on gridWidget
     gridLayout->setSpacing(8);
     gridLayout->setColumnStretch(1, 1); // Allow value column to stretch
     gridLayout->setColumnStretch(
@@ -228,7 +282,8 @@ DeviceInfoWidget::DeviceInfoWidget(iDescriptorDevice *device, QWidget *parent)
         }
     }
 
-    infoLayout->addWidget(gridWidget);
+    infoLayout->addWidget(
+        shadowContainer); // Add the container to the main layout
     // infoLayout->addStretch(); // Pushes footer to the bottom
 
     // Footer
@@ -310,14 +365,27 @@ void DeviceInfoWidget::updateBatteryInfo()
     else
         parseDeviceBattery(ioreg, d);
     /*UI*/
-    m_chargingStatusLabel->setText(d.batteryInfo.isCharging ? "Charging"
-                                                            : "Not Charging");
-    m_chargingWattsLabel->setText(QString::number(d.batteryInfo.watts) + "W");
-    m_cableTypeLabel->setText(d.batteryInfo.usbConnectionType ==
-                                      BatteryInfo::ConnectionType::USB
-                                  ? "USB"
-                                  : "USB-C");
+    updateChargingStatusIcon();
+    m_chargingWattsWithCableTypeLabel->setText(
+        QString::number(d.batteryInfo.watts) + "W" + "/" +
+        (d.batteryInfo.usbConnectionType == BatteryInfo::ConnectionType::USB
+             ? "USB"
+             : "USB-C"));
 
     m_batteryWidget->updateContext(d.batteryInfo.isCharging,
                                    d.batteryInfo.currentBatteryLevel);
+}
+
+void DeviceInfoWidget::updateChargingStatusIcon()
+{
+    if (m_device->deviceInfo.batteryInfo.isCharging) {
+        m_chargingStatusLabel->setText("Charging");
+        m_chargingStatusLabel->setStyleSheet("color: green;");
+        m_lightningIconLabel->show();
+
+    } else {
+        m_chargingStatusLabel->setText("Not Charging");
+        m_chargingStatusLabel->setStyleSheet("color: white;");
+        m_lightningIconLabel->hide();
+    }
 }

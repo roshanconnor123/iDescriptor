@@ -140,6 +140,9 @@ file(GLOB PROJECT_SOURCES
     src/*.cpp
     src/core/helpers/*.cpp
     src/core/services/*.cpp
+    src/platform/*.cpp
+    src/platform/*.mm
+    src/platform/*.m
     src/*.h
     src/*.ui
     resources.qrc

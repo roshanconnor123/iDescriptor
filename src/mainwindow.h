@@ -1,11 +1,12 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
+#include "customtabwidget.h"
 #include "devicemanagerwidget.h"
 #include "devicemenuwidget.h"
 #include "iDescriptor.h"
 #include "libirecovery.h"
+#include <QLabel>
 #include <QMainWindow>
-#include <libimobiledevice/libimobiledevice.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -21,21 +22,20 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
-signals:
-    void deviceAdded(QString udid); // Signal for device connections
+    void onRecoveryDeviceAdded(QObject *recoveryDeviceInfoObj);
+    void onRecoveryDeviceRemoved(QObject *deviceInfoObj);
 
 public slots:
-    void onRecoveryDeviceAdded(
-        QObject *device_info); // Slot for recovery device connections
-    void onRecoveryDeviceRemoved(
-        QObject *device_info); // Slot for recovery device disconnections
     void onDeviceInitFailed(QString udid, lockdownd_error_t err);
-
-private:
     void updateNoDevicesConnected();
 
+private:
+    void createMenus();
+
     Ui::MainWindow *ui;
-    DeviceManagerWidget *m_deviceManager; // Add this member
+    CustomTabWidget *m_customTabWidget;
+    DeviceManagerWidget *m_deviceManager;
+    QStackedWidget *m_mainStackedWidget;
+    QLabel *m_connectedDeviceCountLabel;
 };
 #endif // MAINWINDOW_H

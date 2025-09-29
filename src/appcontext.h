@@ -26,6 +26,7 @@ public:
     QList<RecoveryDeviceInfo *> getAllRecoveryDevices();
     ~AppContext();
     void instanceRemoveDevice(QString _udid);
+    int getConnectedDeviceCount() const;
 
 private:
     QMap<std::string, iDescriptorDevice *> m_devices;

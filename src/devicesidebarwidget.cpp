@@ -218,7 +218,7 @@ const std::string &DeviceSidebarItem::getDeviceUuid() const { return m_uuid; }
 DeviceSidebarWidget::DeviceSidebarWidget(QWidget *parent) : QWidget(parent)
 {
     QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setContentsMargins(10, 10, 10, 10);
     mainLayout->setSpacing(0);
 
     // Create scroll area

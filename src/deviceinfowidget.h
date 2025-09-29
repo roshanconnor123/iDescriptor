@@ -21,10 +21,11 @@ private:
     iDescriptorDevice *m_device;
     QTimer *m_updateTimer;
     void updateBatteryInfo();
+    void updateChargingStatusIcon();
     QLabel *m_chargingStatusLabel;
-    QLabel *m_chargingWattsLabel;
-    QLabel *m_cableTypeLabel;
+    QLabel *m_chargingWattsWithCableTypeLabel;
     BatteryWidget *m_batteryWidget;
+    QLabel *m_lightningIconLabel;
 };
 
 #endif // DEVICEINFOWIDGET_H

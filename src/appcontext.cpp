@@ -153,6 +153,11 @@ void AppContext::instanceRemoveDevice(QString _udid)
     // return true;
 }
 
+int AppContext::getConnectedDeviceCount() const
+{
+    return m_devices.size() + m_recoveryDevices.size();
+}
+
 void AppContext::removeDevice(QString _udid)
 
 {

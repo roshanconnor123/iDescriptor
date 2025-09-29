@@ -5,37 +5,46 @@
 #include "iDescriptor.h"
 #include "installedappswidget.h"
 #include <QDebug>
-#include <QTabWidget>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 DeviceMenuWidget::DeviceMenuWidget(iDescriptorDevice *device, QWidget *parent)
     : QWidget{parent}, device(device)
 {
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(0, 0, 0, 0);
+    mainLayout->setSpacing(0);
 
-    QWidget *centralWidget = new QWidget(this);
-    tabWidget = new QTabWidget(this);
-    tabWidget->tabBar()->hide();
-    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
-    mainLayout->addWidget(tabWidget);
+    stackedWidget = new QStackedWidget(this);
+    mainLayout->addWidget(stackedWidget);
 
-    FileExplorerWidget *explorer = new FileExplorerWidget(device, this);
-    explorer->setMinimumHeight(300);
+    // Create and add widgets to the stacked widget
+    DeviceInfoWidget *deviceInfoWidget = new DeviceInfoWidget(device, this);
+    InstalledAppsWidget *installedAppsWidget =
+        new InstalledAppsWidget(device, this);
+    GalleryWidget *galleryWidget = new GalleryWidget(device, this);
+    FileExplorerWidget *fileExplorerWidget =
+        new FileExplorerWidget(device, this);
 
-    GalleryWidget *gallery = new GalleryWidget(device, this);
-    gallery->setMinimumHeight(300);
-    setLayout(mainLayout);
+    // Set minimum heights
+    galleryWidget->setMinimumHeight(300);
+    fileExplorerWidget->setMinimumHeight(300);
 
-    tabWidget->addTab(new DeviceInfoWidget(device, this), "");
-    tabWidget->addTab(new InstalledAppsWidget(device, this), "");
-    unsigned int galleryIndex = tabWidget->addTab(gallery, "");
-    tabWidget->addTab(explorer, "");
+    // Add widgets to stack (index 0, 1, 2, 3)
+    stackedWidget->addWidget(deviceInfoWidget);    // Index 0 - Info
+    stackedWidget->addWidget(installedAppsWidget); // Index 1 - Apps
+    stackedWidget->addWidget(galleryWidget);       // Index 2 - Gallery
+    stackedWidget->addWidget(fileExplorerWidget);  // Index 3 - Files
 
-    // TODO : one time ?
-    connect(tabWidget, &QTabWidget::currentChanged, this,
-            [this, galleryIndex, gallery](int index) {
-                if (index == galleryIndex) {
+    // Set default to Info tab
+    stackedWidget->setCurrentIndex(0);
+
+    // Connect to current changed signal for lazy loading
+    connect(stackedWidget, &QStackedWidget::currentChanged, this,
+            [this, galleryWidget](int index) {
+                if (index == 2) { // Gallery tab
                     qDebug() << "Switched to Gallery tab";
-                    gallery->load();
+                    galleryWidget->load();
                 }
             });
 }
@@ -43,13 +52,13 @@ DeviceMenuWidget::DeviceMenuWidget(iDescriptorDevice *device, QWidget *parent)
 void DeviceMenuWidget::switchToTab(const QString &tabName)
 {
     if (tabName == "Info") {
-        tabWidget->setCurrentIndex(0);
+        stackedWidget->setCurrentIndex(0);
     } else if (tabName == "Apps") {
-        tabWidget->setCurrentIndex(1);
+        stackedWidget->setCurrentIndex(1);
     } else if (tabName == "Gallery") {
-        tabWidget->setCurrentIndex(2);
+        stackedWidget->setCurrentIndex(2);
     } else if (tabName == "Files") {
-        tabWidget->setCurrentIndex(3);
+        stackedWidget->setCurrentIndex(3);
     } else {
         qDebug() << "Tab not found:" << tabName;
     }

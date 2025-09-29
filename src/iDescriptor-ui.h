@@ -1,5 +1,7 @@
 #pragma once
 #include <QGraphicsView>
+#include <QMainWindow>
+
 // A custom QGraphicsView that keeps the content fitted with aspect ratio on
 // resize
 class ResponsiveGraphicsView : public QGraphicsView
@@ -19,3 +21,7 @@ protected:
         QGraphicsView::resizeEvent(event);
     }
 };
+
+#ifdef Q_OS_MAC
+void setupMacOSWindow(QMainWindow *window);
+#endif

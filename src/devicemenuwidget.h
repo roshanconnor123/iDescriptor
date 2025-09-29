@@ -1,7 +1,7 @@
 #ifndef DEVICEMENUWIDGET_H
 #define DEVICEMENUWIDGET_H
 #include "iDescriptor.h"
-#include <QTabWidget>
+#include <QStackedWidget>
 #include <QWidget>
 class DeviceMenuWidget : public QWidget
 {
@@ -12,8 +12,8 @@ public:
     void switchToTab(const QString &tabName);
     // ~DeviceMenuWidget();
 private:
-    QTabWidget *tabWidget;     // Pointer to the tab widget
-    iDescriptorDevice *device; // Pointer to the iDescriptor device
+    QStackedWidget *stackedWidget; // Pointer to the stacked widget
+    iDescriptorDevice *device;     // Pointer to the iDescriptor device
 signals:
 };
 

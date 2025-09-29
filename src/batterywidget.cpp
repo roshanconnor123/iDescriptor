@@ -10,8 +10,8 @@
 BatteryWidget::BatteryWidget(float value, bool isCharging, QWidget *parent)
     : QWidget(parent), m_value(value), m_isCharging(isCharging)
 {
-    setMinimumSize(50, 40);
-    setMaximumSize(60, 40);
+    setMinimumSize(30, 30);
+    setMaximumSize(40, 40);
 }
 
 void BatteryWidget::resizeEvent(QResizeEvent *)
@@ -111,7 +111,7 @@ void BatteryWidget::paintEvent(QPaintEvent *)
     pen.setColor(Qt::white);
     painter.setPen(pen);
     QFont textFont = QFont();
-    textFont.setPixelSize(widgetFrame.height() / 2);
+    textFont.setPixelSize(widgetFrame.height() / 1.65);
     painter.setFont(textFont);
     QFontMetrics fm(textFont);
     QString percentageLevelString = QString("%1%").arg(m_value);
@@ -121,13 +121,4 @@ void BatteryWidget::paintEvent(QPaintEvent *)
     QPointF textPosition = QPointF(widgetFrame.center().x() - textWidth / 2,
                                    widgetFrame.center().y() + textHeight / 3);
     painter.drawText(textPosition, percentageLevelString);
-
-    float chargerSize = widgetFrame.height() / 2;
-
-    // if (isCharging) {
-    //     QPixmap pixmap(":/img/charge.png");
-    //     painter.drawPixmap(widgetFrame.center().x() - chargerSize * 1.5,
-    //                        widgetFrame.top() + chargerSize / 2, chargerSize,
-    //                        chargerSize, pixmap);
-    // }
 }
