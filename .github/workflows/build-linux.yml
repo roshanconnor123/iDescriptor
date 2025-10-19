@@ -53,11 +53,11 @@ jobs:
             libssh-dev
 
       - name: Install Qt
-        id: install-qt
         uses: jurplel/install-qt-action@v3
         with:
           version: "6.7.2"
           modules: "qtmultimedia qtlocation qtpositioning qtserialport"
+          dir: ${{ github.workspace }}
 
       - name: Compile additional dependencies
         run: |
@@ -124,8 +124,6 @@ jobs:
 
       - name: Build AppImage
         working-directory: ./build
-        env:
-          QTDIR: ${{ steps.install-qt.outputs.qt-path }}
         run: |
           ../appimagetool-*.AppImage deploy AppDir/usr/share/applications/*.desktop
           VERSION=1.0.0 ../appimagetool-*.AppImage AppDir
