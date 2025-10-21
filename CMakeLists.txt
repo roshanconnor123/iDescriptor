@@ -26,8 +26,7 @@ endif()
 include_directories(${CUSTOM_INCLUDE_PATH})
 
 find_package(PkgConfig REQUIRED)
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Multimedia Network QuickControls2)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Multimedia Network QuickControls2)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Multimedia MultimediaWidgets Network QuickControls2 SerialPort Positioning Location QuickWidgets) 
 
 # Add QTermWidget
 pkg_check_modules(QTERMWIDGET REQUIRED IMPORTED_TARGET qtermwidget6)
@@ -190,18 +189,6 @@ endif()
 add_subdirectory(lib/airplay)
 add_subdirectory(lib/ipatool-go)
 
-
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Quick)
-find_package(Qt6 REQUIRED COMPONENTS Location)
-find_package(Qt6 REQUIRED COMPONENTS Positioning)
-find_package(Qt6 REQUIRED COMPONENTS QuickWidgets)
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
-find_package(Qt6 REQUIRED COMPONENTS Multimedia)
-find_package(Qt6 REQUIRED COMPONENTS MultimediaWidgets)
-
-
 if (WIN32)
 # todo
     set(app_icon_resource_windows "${CMAKE_CURRENT_SOURCE_DIR}/resources/todo.rc")
@@ -229,16 +216,16 @@ else()
 endif()
 
 target_link_libraries(iDescriptor PRIVATE 
-    Qt${QT_VERSION_MAJOR}::Widgets 
-    Qt${QT_VERSION_MAJOR}::Multimedia
-    Qt${QT_VERSION_MAJOR}::MultimediaWidgets
-    Qt${QT_VERSION_MAJOR}::Network
-    Qt${QT_VERSION_MAJOR}::Core
-    Qt${QT_VERSION_MAJOR}::Quick
-    Qt${QT_VERSION_MAJOR}::Location
-    Qt${QT_VERSION_MAJOR}::Positioning
-    Qt${QT_VERSION_MAJOR}::QuickWidgets
-    Qt${QT_VERSION_MAJOR}::QuickControls2
+    Qt6::Widgets 
+    Qt6::Multimedia
+    Qt6::MultimediaWidgets
+    Qt6::Network
+    Qt6::Core
+    Qt6::Quick
+    Qt6::Location
+    Qt6::Positioning
+    Qt6::QuickWidgets
+    Qt6::QuickControls2
     ${IMOBILEDEVICE_LIBRARY}
     ${IMOBILEDEVICE_GLUE_LIBRARY}
     # ${PLIST_LIBRARY}
@@ -284,13 +271,6 @@ endif()
 target_compile_definitions(iDescriptor PRIVATE 
     SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
-
-# Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
-# If you are developing for iOS or macOS you should consider setting an
-# explicit, fixed bundle identifier manually though.
-if(${QT_VERSION} VERSION_LESS 6.1.0)
-    set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.iDescriptor)
-endif()
 
 set_target_properties(iDescriptor PROPERTIES
     ${BUNDLE_ID_OPTION}
