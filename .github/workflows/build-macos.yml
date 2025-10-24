@@ -59,7 +59,7 @@ jobs:
 
           base_url="https://github.com/libimobiledevice"
 
-          libs=( "libplist" "libtatsu" "libimobiledevice-glue" "libusbmuxd" "libimobiledevice" "libirecovery" "ifuse" )
+          libs=( "libplist" "libtatsu" "libimobiledevice-glue" "libusbmuxd" "libimobiledevice" "libirecovery")
 
           for name in "${libs[@]}"; do
             # Use tr for POSIX-compliant uppercase conversion instead of bash 4+ ^^ syntax
