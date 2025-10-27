@@ -23,6 +23,9 @@ jobs:
           submodules: "recursive"
           token: ${{ secrets.PAT }}
 
+      - name: Mkdir qt
+        run: mkdir $HOME/Qt
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -33,6 +36,7 @@ jobs:
           use-official: true
           email: ${{ secrets.QT_EMAIL }}
           pw: ${{ secrets.QT_PW }}
+          dir: "$HOME/Qt"
 
       - name: Update pkgconfig path
         run: |
