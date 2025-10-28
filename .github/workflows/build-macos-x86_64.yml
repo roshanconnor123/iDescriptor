@@ -137,6 +137,8 @@ jobs:
 
       - name: Deploy Qt dependencies
         run: |
+          macdeployqt build/iDescriptor.app -qmldir=qml -verbose=2
+
           # Manually bundle QtMultimediaWidgets if missing
           cp -RL "${QT_ROOT_DIR}/lib/QtMultimediaWidgets.framework" build/iDescriptor.app/Contents/Frameworks/
 
