@@ -5,6 +5,7 @@
 #include "ifusemanager.h"
 #include "mainwindow.h"
 #include <QDebug>
+#include <QFileInfo>
 #include <QStandardPaths>
 #include <QStatusBar>
 #include <QTimer>
@@ -14,21 +15,10 @@ iFuseWidget::iFuseWidget(iDescriptorDevice *device, QWidget *parent)
       m_device(device)
 {
     setupUI();
-    updateDeviceComboBox();
+    updateUI();
 
-    // Connect to AppContext signals for device changes
-    connect(AppContext::sharedInstance(), &AppContext::deviceAdded, this,
-            &iFuseWidget::refreshDevices);
-    connect(AppContext::sharedInstance(), &AppContext::deviceRemoved, this,
-            &iFuseWidget::refreshDevices);
-}
-
-iFuseWidget::~iFuseWidget()
-{
-    if (m_ifuseProcess && m_ifuseProcess->state() == QProcess::Running) {
-        m_ifuseProcess->kill();
-        m_ifuseProcess->waitForFinished(3000);
-    }
+    connect(AppContext::sharedInstance(), &AppContext::deviceChange, this,
+            &iFuseWidget::updateUI);
 }
 
 void iFuseWidget::setupUI()
@@ -73,16 +63,12 @@ void iFuseWidget::setupUI()
     pathLayout->setContentsMargins(0, 0, 0, 0);
 
     m_mountPathLabel = new ZLabel(this);
+    m_mountPathLabel->setCursor(Qt::PointingHandCursor);
     m_mountPathLabel->setText("Mount directory will be shown here");
     m_mountPathLabel->setStyleSheet("QLabel { "
                                     "border: 1px solid #ccc; "
                                     "padding: 8px; "
                                     "border-radius: 4px; "
-                                    "background-color: #f9f9f9; "
-                                    "}"
-                                    "QLabel:hover { "
-                                    "background-color: #f0f0f0; "
-                                    "cursor: pointer; "
                                     "}");
     m_mountPathLabel->setMinimumHeight(35);
 
@@ -113,34 +99,17 @@ void iFuseWidget::setupUI()
     connect(m_deviceComboBox, &QComboBox::currentTextChanged, this,
             &iFuseWidget::onDeviceChanged);
 
-    // Set default mount path based on device
-    if (m_device) {
-        QString homeDir =
-            QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-        QString productType =
-            QString::fromStdString(m_device->deviceInfo.productType);
-        QString defaultMountPath = QDir(homeDir).absoluteFilePath(productType);
-        m_mountPathLabel->setText(defaultMountPath);
-    } else {
-        QString homeDir =
-            QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-        QString defaultMountPath = QDir(homeDir).absoluteFilePath("iPhone");
-        m_mountPathLabel->setText(defaultMountPath);
-    }
+    QString homeDir =
+        QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+    QString productType =
+        QString::fromStdString(m_device->deviceInfo.productType);
+    QString defaultMountPath = QDir(homeDir).absoluteFilePath(productType);
+    m_mountPathLabel->setText(defaultMountPath);
 }
 
 void iFuseWidget::updateDeviceComboBox()
 {
     m_deviceComboBox->clear();
-
-    QList<iDescriptorDevice *> devices =
-        AppContext::sharedInstance()->getAllDevices();
-
-    if (devices.isEmpty()) {
-        close();
-        return;
-    }
-
     m_deviceComboBox->setEnabled(true);
     m_mountButton->setEnabled(true);
 
@@ -172,12 +141,25 @@ void iFuseWidget::updateDeviceComboBox()
 
 void iFuseWidget::onFolderPickerClicked()
 {
+#ifdef WIN32
+    QString currentPath = m_mountPathLabel->text();
+    // On Windows, ifuse requires a non-existent directory.
+    // We can use getSaveFileName to allow the user to specify one.
+    QString dir = QFileDialog::getSaveFileName(this, "Select Mount Directory",
+                                               currentPath);
+    if (!dir.isEmpty()) {
+        m_mountPathLabel->setText(dir);
+    }
+#endif
+
+#ifdef __linux__
     QString currentPath = m_mountPathLabel->text();
     QString dir = QFileDialog::getExistingDirectory(
         this, "Select Mount Directory", currentPath);
     if (!dir.isEmpty()) {
         m_mountPathLabel->setText(dir);
     }
+#endif
 }
 
 void iFuseWidget::onMountPathClicked()
@@ -194,7 +176,7 @@ void iFuseWidget::onMountClicked()
         return;
     }
 
-    m_ifuseProcess = new QProcess(this);
+    m_ifuseProcess = new QProcess();
     connect(m_ifuseProcess,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this,
             &iFuseWidget::onProcessFinished);
@@ -202,10 +184,25 @@ void iFuseWidget::onMountClicked()
             &iFuseWidget::onProcessError);
 
     QString ifuseExecutablePath;
+    QString fullMountPath = m_mountPathLabel->text();
 
+// On Windows we ship with a bundled win-ifuse.exe
+#ifdef WIN32
+    ifuseExecutablePath =
+        QCoreApplication::applicationDirPath() + "/win-ifuse.exe";
+    qDebug() << "Looking for bundled win-ifuse.exe at" << ifuseExecutablePath;
+    if (!QFileInfo::exists(ifuseExecutablePath)) {
+        setStatusMessage("Error: win-ifuse.exe not found at expected path: " +
+                             ifuseExecutablePath,
+                         true);
+        return;
+    }
+#endif
+
+#ifdef __linux__
     /*
-     Check if running in AppImage
-     this is set by the plugin script
+        Check if running in AppImage
+        this is set by the plugin script
     */
     if (qEnvironmentVariableIsSet("IFUSE_BIN_APPIMAGE")) {
         ifuseExecutablePath = qgetenv("IFUSE_BIN_APPIMAGE");
@@ -217,8 +214,8 @@ void iFuseWidget::onMountClicked()
         }
 
         if (!QFileInfo(ifuseExecutablePath).isExecutable()) {
-            setStatusMessage(
-                "Error: Bundled ifuse not found or is not executable.", true);
+            setStatusMessage("Error: ifuse not found or is not executable.",
+                             true);
             return;
         }
     } else {
@@ -230,16 +227,21 @@ void iFuseWidget::onMountClicked()
             return;
         }
     }
+#endif
 
-    // Create the mount directory
-    QString homeDir =
-        QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
-    QString productType =
-        m_device ? QString::fromStdString(m_device->deviceInfo.productType)
-                 : "iPhone";
-    QString fullMountPath = QDir(homeDir).absoluteFilePath(productType);
+#ifdef WIN32
+    // On Windows, the mount path must not exist.
+    if (QFileInfo(fullMountPath).exists()) {
+        setStatusMessage("Error: Mount directory must not exist on Windows: " +
+                             fullMountPath,
+                         true);
+        return;
+    }
+#endif
 
     QDir dir;
+// on Linux, we need to create the mount directory if it doesn't exist
+#ifdef __linux__
     if (!QDir(fullMountPath).exists()) {
         if (!dir.mkpath(fullMountPath)) {
             setStatusMessage("Error: Failed to create mount directory: " +
@@ -248,10 +250,10 @@ void iFuseWidget::onMountClicked()
             return;
         }
     }
+#endif
 
     m_currentMountPath = fullMountPath;
 
-    // Get selected device UDID
     QString deviceUdid = getSelectedDeviceUdid();
 
     setStatusMessage("Mounting device...", false);
@@ -263,6 +265,44 @@ void iFuseWidget::onMountClicked()
     arguments << "-u" << deviceUdid << fullMountPath;
 
     m_ifuseProcess->start(ifuseExecutablePath, arguments);
+
+#ifdef WIN32
+    // On Windows, the process runs in the foreground. We wait for it to start.
+    // If it fails to start, onProcessError will be called.
+    if (!m_ifuseProcess->waitForStarted()) {
+        return;
+    }
+
+    // Process started successfully, so we treat it as a successful mount
+    setStatusMessage("Device mounted successfully at: " + m_currentMountPath,
+                     false);
+
+    m_mountButton->setText("Mount");
+    m_mountButton->setEnabled(true);
+
+    auto *b = new iFuseDiskUnmountButton(m_currentMountPath);
+    MainWindow::sharedInstance()->statusBar()->addPermanentWidget(b);
+
+    QProcess *processToKill = m_ifuseProcess;
+    connect(b, &iFuseDiskUnmountButton::clicked, b, [processToKill, b]() {
+        if (processToKill) {
+            processToKill->kill();
+        }
+        MainWindow::sharedInstance()->statusBar()->removeWidget(b);
+        b->deleteLater();
+    });
+    connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, b,
+            [processToKill]() {
+                if (processToKill &&
+                    processToKill->state() == QProcess::Running) {
+                    processToKill->kill();
+                }
+            });
+
+    QTimer::singleShot(1000, [this]() {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(m_currentMountPath));
+    });
+#endif
 }
 
 void iFuseWidget::onProcessFinished(int exitCode,
@@ -276,32 +316,40 @@ void iFuseWidget::onProcessFinished(int exitCode,
         return;
     }
 
+#ifdef WIN32
+    // On Windows, this is just a confirmation that the process has been
+    // terminated.
+    setStatusMessage("Device unmounted from " + m_currentMountPath, false);
+#endif
+
+#ifdef __linux__
     if (exitCode == 0) {
         setStatusMessage(
             "Device mounted successfully at: " + m_currentMountPath, false);
 
         auto *b = new iFuseDiskUnmountButton(m_currentMountPath);
         MainWindow::sharedInstance()->statusBar()->addPermanentWidget(b);
-
-        connect(b, &iFuseDiskUnmountButton::clicked, this, [this, b]() {
-            qDebug() << "Unmounting" << m_currentMountPath;
-            bool ok = iFuseManager::linuxUnmount(m_currentMountPath);
-            if (!ok) {
-                QMessageBox::warning(nullptr, "Unmount Failed",
-                                     "Failed to unmount iFuse at " +
-                                         m_currentMountPath +
-                                         ". Please try again.");
-                return;
-            }
-            MainWindow::sharedInstance()->statusBar()->removeWidget(b);
-            b->deleteLater();
-        });
-        // Open the mounted directory
+        QProcess *processToKill = m_ifuseProcess;
+        connect(b, &iFuseDiskUnmountButton::clicked, this,
+                [b, processToKill]() {
+                    qDebug() << "Unmounting" << m_currentMountPath;
+                    bool ok = iFuseManager::linuxUnmount(m_currentMountPath);
+                    if (!ok) {
+                        QMessageBox::warning(nullptr, "Unmount Failed",
+                                             "Failed to unmount iFuse at " +
+                                                 m_currentMountPath +
+                                                 ". Please try again.");
+                        return;
+                    }
+                    MainWindow::sharedInstance()->statusBar()->removeWidget(b);
+                    b->deleteLater();
+                });
         QDesktopServices::openUrl(QUrl::fromLocalFile(m_currentMountPath));
     } else {
         QString errorOutput = m_ifuseProcess->readAllStandardError();
         setStatusMessage("Mount failed: " + errorOutput, true);
     }
+#endif
 
     m_ifuseProcess->deleteLater();
     m_ifuseProcess = nullptr;
@@ -336,7 +384,28 @@ void iFuseWidget::onProcessError(QProcess::ProcessError error)
     }
 }
 
-void iFuseWidget::refreshDevices() { updateDeviceComboBox(); }
+void iFuseWidget::updatePath()
+{
+    QString homeDir =
+        QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
+    QString productType =
+        QString::fromStdString(m_device->deviceInfo.productType);
+    QString defaultMountPath = QDir(homeDir).absoluteFilePath(productType);
+    m_mountPathLabel->setText(defaultMountPath);
+}
+
+void iFuseWidget::updateUI()
+{
+    QList<iDescriptorDevice *> devices =
+        AppContext::sharedInstance()->getAllDevices();
+
+    if (devices.isEmpty()) {
+        close();
+        return;
+    }
+    updateDeviceComboBox();
+    updatePath();
+}
 
 bool iFuseWidget::validateInputs()
 {

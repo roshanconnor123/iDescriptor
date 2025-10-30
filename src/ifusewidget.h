@@ -24,7 +24,6 @@ class iFuseWidget : public QWidget
 
 public:
     explicit iFuseWidget(iDescriptorDevice *device, QWidget *parent = nullptr);
-    ~iFuseWidget();
 
 private slots:
     void onFolderPickerClicked();
@@ -32,10 +31,11 @@ private slots:
     void onMountClicked();
     void onProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
     void onProcessError(QProcess::ProcessError error);
-    void refreshDevices();
+    void updateUI();
 
 private:
     void setupUI();
+    void updatePath();
     void updateDeviceComboBox();
     bool validateInputs();
     QString getSelectedDeviceUdid();

@@ -7,7 +7,7 @@ QStringList iFuseManager::getMountArg(std::string &udid, QString &path)
     return QStringList() << "-u" << QString::fromStdString(udid) << path;
 }
 
-#ifdef Q_OS_LINUX
+#ifdef __linux__
 QList<QString> iFuseManager::getMountPoints()
 {
     QProcess mountProcess;

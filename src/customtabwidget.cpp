@@ -11,8 +11,8 @@ CustomTab::CustomTab(const QString &text, QWidget *parent)
     : QPushButton(text, parent)
 {
     setCheckable(true);
-    setFixedHeight(54);
-    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    // setFixedHeight(54);
+    // setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
 void CustomTab::setIcon(const QIcon &icon)
@@ -31,7 +31,7 @@ CustomTabWidget::CustomTabWidget(QWidget *parent)
 
     // Create tab bar container
     m_tabBar = new QWidget();
-    m_tabBar->setFixedHeight(70); // 54px height + 16px padding
+    // m_tabBar->setFixedHeight(70); // 54px height + 16px padding
     m_tabLayout = new QHBoxLayout(m_tabBar);
     // m_tabLayout->setContentsMargins(12, 8, 12, 8);
     m_tabLayout->setSpacing(0);
@@ -171,7 +171,7 @@ void CustomTabWidget::animateGlider(int index)
     // Position glider at the bottom of the target tab
     int targetX = targetTabPos.x();
     int targetY =
-        targetTabPos.y() + targetTabSize.height() - 2; // Position at bottom
+        targetTabPos.y() + targetTabSize.height() + 6; // Position at bottom
 
     m_gliderAnimation->stop();
     m_gliderAnimation->setStartValue(m_glider->pos());
