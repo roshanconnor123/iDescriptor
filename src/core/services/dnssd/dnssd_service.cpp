@@ -245,11 +245,30 @@ void DNSSD_API DnssdService::addrInfoCallback(
     inet_ntop(AF_INET, &addr_in->sin_addr, ip, sizeof(ip));
 
     NetworkDevice device;
-    device.name = pending.name;
+    // Extract a better device name from hostname or use TXT records
+    QString friendlyName = pending.hostname;
+    if (friendlyName.endsWith(".local.")) {
+        friendlyName =
+            friendlyName.left(friendlyName.length() - 7); // Remove ".local."
+        qDebug() << "friendly name:" << friendlyName;
+    }
+
+    // Try to get device name from TXT records first
+    if (pending.txt.contains("DvNm")) {
+        device.name = pending.txt["DvNm"];
+        qDebug() << "Device name from DvNm TXT record:" << device.name;
+    } else if (pending.txt.contains("Name")) {
+        device.name = pending.txt["Name"];
+        qDebug() << "Device name from Name TXT record:" << device.name;
+    } else {
+        // Use the cleaned hostname as fallback
+        qDebug() << "Using hostname as device name:" << friendlyName;
+        device.name = friendlyName;
+    }
+
     device.hostname = pending.hostname;
     device.address = QString::fromUtf8(ip);
     device.port = pending.port > 0 ? pending.port : 22; // Default to SSH port
-    // device.txt = pending.txt;
 
     qDebug() << "Resolved IP for Apple device:" << device.name << "at"
              << device.address << ":" << device.port;

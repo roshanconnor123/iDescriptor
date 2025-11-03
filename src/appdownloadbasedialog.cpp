@@ -117,7 +117,8 @@ void AppDownloadBaseDialog::startDownloadProcess(const QString &bundleId,
                 // if (promptToOpenDir)
                 QMessageBox::critical(
                     this, "Download Failed",
-                    QString("Failed to download %1. Error code: %2")
+                    QString("Failed to download %1. Try signing out and back "
+                            "in. Error code: %2")
                         .arg(m_appName)
                         .arg(result));
                 reject();

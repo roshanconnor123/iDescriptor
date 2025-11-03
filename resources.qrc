@@ -48,5 +48,6 @@
         <file>resources/airplayer-tutorial.mp4</file>
         <file>resources/ipad-mockups/ipad.png</file>
         <file>resources/DeveloperDiskImages.json</file>
+        <file>resources/keychain.mp4</file>
     </qresource>
 </RCC>

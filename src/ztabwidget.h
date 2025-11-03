@@ -27,7 +27,7 @@ class ZTabWidget : public QWidget
 public:
     explicit ZTabWidget(QWidget *parent = nullptr);
     void finalizeStyles();
-    int addTab(QWidget *widget, const QString &label);
+    ZTab *addTab(QWidget *widget, const QString &label);
     void setCurrentIndex(int index);
     int currentIndex() const;
     QWidget *widget(int index) const;

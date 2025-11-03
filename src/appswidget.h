@@ -66,6 +66,7 @@ public:
     static AppsWidget *sharedInstance();
     void onAppCardClicked(const QString &appName, const QString &bundleId,
                           const QString &description);
+    void init();
 private slots:
     void onLoginClicked();
     void onDownloadIpaClicked(const QString &name, const QString &bundleId);
@@ -90,7 +91,7 @@ private:
     void clearAppGrid();
     void populateDefaultApps();
     void createSponsorCard(QGridLayout *gridLayout, int row, int col);
-
+    void handleInit();
     QStackedWidget *m_stackedWidget;
     QWidget *m_defaultAppsPage;
     QWidget *m_loadingPage;

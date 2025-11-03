@@ -5,7 +5,10 @@
 #include "appinstalldialog.h"
 #include "appstoremanager.h"
 #include "iDescriptor-ui.h"
+#include "keychaindialog.h"
 #include "logindialog.h"
+#include "mainwindow.h"
+#include "settingsmanager.h"
 #include "sponsorwidget.h"
 #include "zlineedit.h"
 #include <QApplication>
@@ -156,17 +159,6 @@ void AppsWidget::setupUI()
 
     // --- Status and Login Button ---
     m_manager = AppStoreManager::sharedInstance();
-    if (!m_manager) {
-        qDebug() << "AppStoreManager failed to initialize";
-        m_statusLabel->setText("Failed to initialize");
-        m_loginButton->setText("Failed to initialize");
-        m_loginButton->setEnabled(false);
-        m_loginButton->setStyleSheet(
-            "background-color: #ccc; color: #666; border: none; border-radius: "
-            "4px; padding: 8px 16px; font-size: 14px;");
-    } else {
-        onAppStoreInitialized(m_manager->getAccountInfo());
-    }
 
     m_statusLabel->setStyleSheet("font-size: 14px; color: #666;");
 
@@ -213,8 +205,10 @@ void AppsWidget::setupUI()
             &AppsWidget::onAppStoreInitialized);
     connect(m_manager, &AppStoreManager::loggedOut, this,
             &AppsWidget::onAppStoreInitialized);
+}
 
-    // fetch sponsors
+void AppsWidget::init()
+{
     QUrl sponsorsUrl("http://localhost:5173/sponsors.json");
     QNetworkRequest request(sponsorsUrl);
     QNetworkReply *reply = m_networkManager->get(request);
@@ -247,8 +241,8 @@ void AppsWidget::setupUI()
                 QJsonObject silverObj = sponsorObj["silver"].toObject();
                 QJsonObject bronzeObj = sponsorObj["bronze"].toObject();
 
-                // Store the platinum members to be used when populating the
-                // grid
+                // Store the platinum members to be used when populating
+                // the grid
                 m_platinumSponsors = platinumObj["members"].toArray();
                 m_goldSponsors = goldObj["members"].toArray();
                 m_silverSponsors = silverObj["members"].toArray();
@@ -259,14 +253,45 @@ void AppsWidget::setupUI()
                 }
             }
             qDebug() << "Sponsors fetch completed";
-            showDefaultApps();
             reply->deleteLater();
+            QTimer::singleShot(0, this, &AppsWidget::handleInit);
         } catch (...) {
             qDebug() << "Exception occurred while processing sponsors";
-            showDefaultApps();
             reply->deleteLater();
+            QTimer::singleShot(0, this, &AppsWidget::handleInit);
         }
     });
+}
+
+void AppsWidget::handleInit()
+{
+    if (!m_manager) {
+        qDebug() << "AppStoreManager failed to initialize";
+        m_statusLabel->setText("Failed to initialize");
+        m_loginButton->setText("Failed to initialize");
+        m_loginButton->setEnabled(false);
+        m_loginButton->setStyleSheet(
+            "background-color: #ccc; color: #666; "
+            "border: "
+            "none; border-radius: "
+            "4px; padding: 8px 16px; font-size: 14px;");
+        return;
+    }
+    if (!SettingsManager::sharedInstance()->useUnsecureBackend() &&
+        SettingsManager::sharedInstance()->showKeychainDialog()) {
+#ifdef __APPLE__
+        KeychainDialog dialog(this);
+        if (dialog.exec() == QDialog::Rejected) {
+            // pass empty QJsonObject to skip signing in
+            onAppStoreInitialized(QJsonObject());
+            showDefaultApps();
+            return;
+        }
+#endif
+    }
+    // todo also change in the ipatoolinitialze as the backend is alrady enabled
+    onAppStoreInitialized(m_manager->getAccountInfo());
+    showDefaultApps();
 }
 
 void AppsWidget::onAppStoreInitialized(const QJsonObject &accountInfo)
@@ -277,10 +302,13 @@ void AppsWidget::onAppStoreInitialized(const QJsonObject &accountInfo)
             QString email = accountInfo.value("email").toString();
             m_statusLabel->setText("Signed in as " + email);
             m_isLoggedIn = true;
+            m_searchEdit->setDisabled(false);
         } else {
             m_statusLabel->setText("Not signed in");
+            m_searchEdit->setDisabled(true);
         }
     } else {
+        m_searchEdit->setDisabled(true);
         m_statusLabel->setText("Not signed in");
     }
 
@@ -710,6 +738,11 @@ void AppsWidget::createAppCard(
 void AppsWidget::onDownloadIpaClicked(const QString &name,
                                       const QString &bundleId)
 {
+    if (!m_isLoggedIn) {
+        QMessageBox::information(this, "Sign In Required",
+                                 "Please sign in to download IPA files.");
+        return;
+    }
     QString description = "Download the IPA file for " + name;
     AppDownloadDialog dialog(name, bundleId, description, this);
     dialog.exec();

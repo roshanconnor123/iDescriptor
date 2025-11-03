@@ -29,23 +29,16 @@ void WelcomeWidget::setupUI()
     m_mainLayout->addSpacing(12);
 
     // Subtitle
-    m_subtitleLabel = createStyledLabel("100% Open-Source & Free", 16, false);
+    m_subtitleLabel = createStyledLabel("Open-Source & Free", 16, false);
     m_subtitleLabel->setAlignment(Qt::AlignCenter);
     QPalette palette = m_subtitleLabel->palette();
-    palette.setColor(QPalette::WindowText,
-                     palette.color(QPalette::WindowText).lighter(140));
-    m_subtitleLabel->setPalette(palette);
     m_mainLayout->addWidget(m_subtitleLabel);
     m_mainLayout->addSpacing(10);
 
     m_imageLabel = new ResponsiveQLabel();
     m_imageLabel->setPixmap(QPixmap(":/resources/connect.png"));
-    // Let the pixmap scale while preserving aspect ratio
     m_imageLabel->setScaledContents(true);
-    // Prefer centered, not full-width expansion
     m_imageLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    // Cap size so it stays nicely centered on large windows
-    // m_imageLabel->setMaximumSize(480, 320);
 
     m_imageLabel->setStyleSheet("background: transparent; border: none;");
 
@@ -53,15 +46,9 @@ void WelcomeWidget::setupUI()
     m_mainLayout->addWidget(m_imageLabel, 0, Qt::AlignHCenter);
     m_mainLayout->addSpacing(10);
 
-    // Instruction text
     m_instructionLabel = createStyledLabel(
         "Please connect an iOS device to get started", 14, false);
     m_instructionLabel->setAlignment(Qt::AlignCenter);
-    QPalette instructionPalette = m_instructionLabel->palette();
-    instructionPalette.setColor(
-        QPalette::WindowText,
-        instructionPalette.color(QPalette::WindowText).lighter(120));
-    m_instructionLabel->setPalette(instructionPalette);
     m_mainLayout->addWidget(m_instructionLabel);
     m_mainLayout->addSpacing(10);
 

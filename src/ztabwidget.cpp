@@ -72,7 +72,7 @@ void ZTabWidget::setupGlider()
     m_gliderAnimation->setEasingCurve(QEasingCurve::OutCubic);
 }
 
-int ZTabWidget::addTab(QWidget *widget, const QString &label)
+ZTab *ZTabWidget::addTab(QWidget *widget, const QString &label)
 {
     ZTab *tab = new ZTab(label, m_tabBar);
     connect(tab, &ZTab::clicked, this, &ZTabWidget::onTabClicked);
@@ -84,7 +84,7 @@ int ZTabWidget::addTab(QWidget *widget, const QString &label)
     m_stackedWidget->addWidget(widget);
     m_buttonGroup->addButton(tab, index);
 
-    return index;
+    return tab;
 }
 
 void ZTabWidget::setCurrentIndex(int index)

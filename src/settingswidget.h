@@ -40,7 +40,7 @@ private:
 #ifndef __APPLE__
     QCheckBox *m_unmount_iFuseDrives;
 #endif
-
+    QCheckBox *m_useUnsecureBackend;
     // Device Connection
     QSpinBox *m_connectionTimeout;
 
@@ -48,6 +48,8 @@ private:
     QPushButton *m_checkUpdatesButton;
     QPushButton *m_resetButton;
     QPushButton *m_applyButton;
+
+    bool m_restartRequired = false;
 };
 
 #endif // SETTINGSWIDGET_H

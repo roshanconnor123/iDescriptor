@@ -106,6 +106,17 @@ void SettingsManager::setUnmountiFuseOnExit(bool enabled)
 }
 #endif
 
+bool SettingsManager::useUnsecureBackend() const
+{
+    return m_settings->value("useUnsecureBackend-ipatool", false).toBool();
+}
+
+void SettingsManager::setUseUnsecureBackend(bool enabled)
+{
+    m_settings->setValue("useUnsecureBackend-ipatool", enabled);
+    m_settings->sync();
+}
+
 QString SettingsManager::theme() const
 {
     return m_settings->value("theme", "System Default").toString();
@@ -125,6 +136,17 @@ int SettingsManager::connectionTimeout() const
 void SettingsManager::setConnectionTimeout(int seconds)
 {
     m_settings->setValue("connectionTimeout", seconds);
+    m_settings->sync();
+}
+
+bool SettingsManager::showKeychainDialog() const
+{
+    return m_settings->value("showKeychainDialog", true).toBool();
+}
+
+void SettingsManager::setShowKeychainDialog(bool show)
+{
+    m_settings->setValue("showKeychainDialog", show);
     m_settings->sync();
 }
 
@@ -167,8 +189,10 @@ void SettingsManager::resetToDefaults()
 #ifndef __APPLE__
     setUnmountiFuseOnExit(false);
 #endif
+    setUseUnsecureBackend(false);
     setTheme("System Default");
     setConnectionTimeout(30);
+    setShowKeychainDialog(true);
 }
 
 void SettingsManager::saveFavoritePlace(const QString &path,

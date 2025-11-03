@@ -105,6 +105,18 @@ void SettingsWidget::setupUI()
 
     scrollLayout->addWidget(deviceGroup);
 
+    // === SECURITY SETTINGS ===
+    auto *securityGroup = new QGroupBox("Security");
+    auto *securityLayout = new QVBoxLayout(securityGroup);
+
+    m_useUnsecureBackend =
+        new QCheckBox("Use unsecure backend for app store (ipatool)");
+    m_useUnsecureBackend->setToolTip(
+        "Enabling this may put your Apple account at risk but you don't have "
+        "to deal with Apple keychain.");
+    securityLayout->addWidget(m_useUnsecureBackend);
+    scrollLayout->addWidget(securityGroup);
+
     // Add stretch to push everything to the top
     scrollLayout->addStretch();
 
@@ -158,7 +170,7 @@ void SettingsWidget::loadSettings()
     }
 
     m_connectionTimeout->setValue(sm->connectionTimeout());
-
+    m_useUnsecureBackend->setChecked(sm->useUnsecureBackend());
     // Disable apply button initially
     m_applyButton->setEnabled(false);
 }
@@ -180,6 +192,27 @@ void SettingsWidget::connectSignals()
             this, &SettingsWidget::onSettingChanged);
     connect(m_connectionTimeout, QOverload<int>::of(&QSpinBox::valueChanged),
             this, &SettingsWidget::onSettingChanged);
+
+    connect(m_useUnsecureBackend, &QCheckBox::toggled, this, [this]() {
+        // since this is unsafe if its being enabled, show a warning
+        if (m_useUnsecureBackend->isChecked()) {
+            auto reply = QMessageBox::warning(
+                this, "Warning",
+                "Enabling this will not encrypt your Apple account which is a "
+                "security risk. Are you sure you want to enable this?",
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+            if (reply == QMessageBox::Yes) {
+                m_restartRequired = true;
+                onSettingChanged();
+            } else {
+                m_useUnsecureBackend->setChecked(false);
+            }
+        } else {
+            m_restartRequired = true;
+            onSettingChanged();
+        }
+    });
 }
 
 void SettingsWidget::onBrowseButtonClicked()
@@ -223,7 +256,13 @@ void SettingsWidget::onResetToDefaultsClicked()
 void SettingsWidget::onApplyClicked()
 {
     saveSettings();
-    QMessageBox::information(this, "Settings", "Settings have been applied.");
+    QMessageBox::information(this, "Settings",
+                             m_restartRequired
+                                 ? "Settings applied. Please restart "
+                                   "the application for changes to "
+                                   "take effect."
+                                 : "Settings applied.");
+    m_restartRequired = false;
 }
 
 void SettingsWidget::onSettingChanged()
@@ -244,6 +283,7 @@ void SettingsWidget::saveSettings()
 #ifndef __APPLE__
     sm->setUnmountiFuseOnExit(m_unmount_iFuseDrives->isChecked());
 #endif
+    sm->setUseUnsecureBackend(m_useUnsecureBackend->isChecked());
 
     sm->setTheme(m_themeCombo->currentText());
     sm->setConnectionTimeout(m_connectionTimeout->value());

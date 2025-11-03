@@ -1,5 +1,6 @@
 #include "appstoremanager.h"
 #include "libipatool-go.h"
+#include "settingsmanager.h"
 #include <QApplication>
 #include <QDebug>
 #include <QFuture>
@@ -46,7 +47,24 @@ AppStoreManager::AppStoreManager(QObject *parent)
 
 bool AppStoreManager::initialize()
 {
-    int result = IpaToolInitialize();
+    bool useUnsecureBackend =
+        SettingsManager::sharedInstance()->useUnsecureBackend();
+
+    QString backends;
+
+    if (useUnsecureBackend) {
+        backends = "file";
+    } else {
+#ifdef __APPLE__
+        backends = "keychain,file";
+#elif defined(WIN32)
+        backends = "wincred,file";
+#else
+        backends = "secret-service,file";
+#endif
+    }
+
+    int result = IpaToolInitialize(backends.toUtf8().data());
     if (result != 0) {
         qDebug() << "IpaToolInitialize failed with error code:" << result;
         return false;

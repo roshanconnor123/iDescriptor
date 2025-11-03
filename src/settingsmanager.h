@@ -55,12 +55,17 @@ public:
     bool unmountiFuseOnExit() const;
     void setUnmountiFuseOnExit(bool enabled);
 #endif
+    bool useUnsecureBackend() const;
+    void setUseUnsecureBackend(bool enabled);
 
     QString theme() const;
     void setTheme(const QString &theme);
 
     int connectionTimeout() const;
     void setConnectionTimeout(int seconds);
+
+    bool showKeychainDialog() const;
+    void setShowKeychainDialog(bool show);
 
     // Utility method for conditional execution
     void doIfEnabled(Setting setting, std::function<void()> action);

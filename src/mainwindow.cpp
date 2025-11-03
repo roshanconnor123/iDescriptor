@@ -134,21 +134,18 @@ MainWindow::MainWindow(QWidget *parent)
             this, &MainWindow::updateNoDevicesConnected);
 
     m_ZTabWidget->addTab(m_mainStackedWidget, "iDevice");
-    m_ZTabWidget->addTab(AppsWidget::sharedInstance(), "Apps");
+    auto *appsWidgetTab =
+        m_ZTabWidget->addTab(AppsWidget::sharedInstance(), "Apps");
     m_ZTabWidget->addTab(new ToolboxWidget(this), "Toolbox");
 
     auto *jailbrokenWidget = new JailbrokenWidget(this);
     m_ZTabWidget->addTab(jailbrokenWidget, "Jailbroken");
     m_ZTabWidget->finalizeStyles();
 
-    // connect(
-    //     m_ZTabWidget, &ZTabWidget::currentChanged, this,
-    //     [this, jailbrokenWidget](int index) {
-    //         if (index == 3) { // Jailbroken tab
-    //             jailbrokenWidget->initWidget();
-    //         }
-    //     },
-    //     Qt::SingleShotConnection);
+    connect(
+        appsWidgetTab, &ZTab::clicked, this,
+        [this](int index) { AppsWidget::sharedInstance()->init(); },
+        Qt::SingleShotConnection);
 
     // settings button
     ZIconWidget *settingsButton = new ZIconWidget(
