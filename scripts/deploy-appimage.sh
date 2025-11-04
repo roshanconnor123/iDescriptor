@@ -98,8 +98,17 @@ for i in "${plugins[@]}"; do
 done
 
 # Copy gst-plugin-scanner and gst-ptp-helper
-cp "/usr/lib/gstreamer-$GSTREAMER_VERSION/gst-plugin-scanner" "$plugins_target_dir/"
-cp "/usr/lib/gstreamer-$GSTREAMER_VERSION/gst-ptp-helper" "$plugins_target_dir/"
+if [ -f "$plugins_dir/gst-plugin-scanner" ]; then
+    cp "$plugins_dir/gst-plugin-scanner" "$plugins_target_dir/"
+else
+    echo "Warning: gst-plugin-scanner not found in $plugins_dir"
+fi
+
+if [ -f "$plugins_dir/gst-ptp-helper" ]; then
+    cp "$plugins_dir/gst-ptp-helper" "$plugins_target_dir/"
+else
+    echo "Warning: gst-ptp-helper not found in $plugins_dir"
+fi
 
 mkdir -p "$APPDIR/apprun-hooks"
 
