@@ -88,7 +88,8 @@ jobs:
 
       - name: Install WiX Toolset
         shell: pwsh
-        run: dotnet tool install --global wix --version 6.0.2
+        run: |
+          dotnet tool install --global wix --version 6.0.2
 
       - name: Add .NET tools to PATH
         shell: pwsh
@@ -96,7 +97,9 @@ jobs:
 
       - name: Install WiX UI Extension
         shell: pwsh
-        run: wix extension add WixToolset.UI.wixext
+        run: |
+          wix extension add -g WixToolset.UI.wixext/6.0.2
+          wix extension list
 
       - name: Download and Extract Bonjour SDK
         run: |
