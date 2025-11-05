@@ -60,6 +60,19 @@ int main(int argc, char *argv[])
     qDebug() << "GST_PLUGIN_SCANNER_1_0=" << gstPluginScannerPath;
     printf("GST_PLUGIN_SCANNER_1_0=%s\n", gstPluginScannerPath.toUtf8().data());
 #endif
+#ifdef __APPLE__
+    QString appPath = QCoreApplication::applicationDirPath();
+    QString frameworksPath =
+        QDir::toNativeSeparators(appPath + "/../Frameworks");
+    QString gstPluginPath =
+        QDir::toNativeSeparators(frameworksPath + "/gstreamer");
+    QString gstPluginScannerPath =
+        QDir::toNativeSeparators(frameworksPath + "/gst-plugin-scanner");
+
+    qputenv("DYLD_LIBRARY_PATH", frameworksPath.toUtf8());
+    qputenv("GST_PLUGIN_SCANNER_1_0", gstPluginScannerPath.toUtf8());
+    qputenv("GST_PLUGIN_SYSTEM_PATH_1_0", gstPluginPath.toUtf8());
+#endif
     QCoreApplication::setOrganizationName("iDescriptor");
     // QCoreApplication::setOrganizationDomain("iDescriptor.com");
     QCoreApplication::setApplicationName("iDescriptor");

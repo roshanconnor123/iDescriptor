@@ -1,4 +1,4 @@
-name: Build macOS x86_64
+name: Build macOS
 
 on:
   workflow_dispatch:
@@ -14,7 +14,14 @@ env:
 
 jobs:
   build-macos:
-    runs-on: macos-15-intel
+    strategy:
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: x86_64
+          - runner: macos-14
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout repository
@@ -34,7 +41,7 @@ jobs:
           # ls "${QT_ROOT_DIR}/lib/pkgconfig"
           # macOS on Apple Silicon uses /opt/homebrew, Intel Macs use /usr/local 
           # echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
-          echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
           echo "CMAKE_PREFIX_PATH=${QT_ROOT_DIR}/lib/cmake:${CMAKE_PREFIX_PATH:-}" >> "$GITHUB_ENV"
 
       - name: Set up Go
@@ -139,10 +146,33 @@ jobs:
         run: |
           macdeployqt build/iDescriptor.app -qmldir=qml -verbose=2
 
+          # Bundle GStreamer
+          GST_PLUGIN_DIR="build/iDescriptor.app/Contents/Frameworks/gstreamer"
+          mkdir -p "${GST_PLUGIN_DIR}"
+          
+          PLUGINS=(
+            "libgstapp"
+            "libgstaudioconvert"
+            "libgstautodetect"
+            "libgstavi"
+            "libgstcoreelements"
+            "libgstlevel"
+            "libgstlibav"
+            "libgstosxaudio"
+            "libgstplayback"
+            "libgstvolume"
+          )
+
+          for plugin in "${PLUGINS[@]}"; do
+            cp "$(brew --prefix)/lib/gstreamer-1.0/${plugin}.dylib" "${GST_PLUGIN_DIR}/"
+          done
+
+          cp "$(brew --prefix)/libexec/gstreamer-1.0/gst-plugin-scanner" "build/iDescriptor.app/Contents/Frameworks/"
+
           # Bundle libjxl_cms
-          cp /usr/local/lib/libjxl_cms.0.11.dylib build/iDescriptor.app/Contents/Frameworks/
+          cp "$(brew --prefix)/lib/libjxl_cms.0.11.dylib" build/iDescriptor.app/Contents/Frameworks/
           install_name_tool -id "@rpath/libjxl_cms.0.11.dylib" build/iDescriptor.app/Contents/Frameworks/libjxl_cms.0.11.dylib
-          install_name_tool -change "/usr/local/lib/libjxl_cms.0.11.dylib" "@rpath/libjxl_cms.0.11.dylib" build/iDescriptor.app/Contents/Frameworks/libjxl.0.11.dylib
+          install_name_tool -change "$(brew --prefix)/lib/libjxl_cms.0.11.dylib" "@rpath/libjxl_cms.0.11.dylib" build/iDescriptor.app/Contents/Frameworks/libjxl.0.11.dylib
 
           install_name_tool -add_rpath "@executable_path/../Frameworks" build/iDescriptor.app/Contents/MacOS/iDescriptor
 
@@ -151,5 +181,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: iDescriptor-macOS
+          name: iDescriptor-macOS-${{ matrix.arch }}
           path: build/*.dmg
