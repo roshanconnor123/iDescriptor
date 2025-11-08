@@ -17,34 +17,33 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef INFOLABEL_H
-#define INFOLABEL_H
+#ifndef PRIVATEINFOLABEL_H
+#define PRIVATEINFOLABEL_H
 
-#include <QLabel>
-#include <QTimer>
+#include "iDescriptor-ui.h"
+#include "infolabel.h"
+#include <QHBoxLayout>
+#include <QWidget>
 
-class InfoLabel : public QLabel
+class PrivateInfoLabel : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit InfoLabel(const QString &text = QString(),
-                       QWidget *parent = nullptr);
-
-    // Allow updating the original text (useful for PrivateInfoLabel)
-    void setOriginalText(const QString &text);
-
-protected:
-    void mousePressEvent(QMouseEvent *event) override;
-    void enterEvent(QEnterEvent *event);
-    void leaveEvent(QEvent *event) override;
+    explicit PrivateInfoLabel(const QString &fullText,
+                              QWidget *parent = nullptr);
 
 private slots:
-    void restoreOriginalText();
+    void toggleVisibility();
 
 private:
-    QString m_originalText;
-    QTimer *m_restoreTimer;
+    QString m_fullText;
+    QString m_maskedText;
+    bool m_isVisible;
+    InfoLabel *m_textLabel;
+    ZIconWidget *m_toggleButton;
+
+    QString getMaskedText(const QString &text);
 };
 
-#endif // INFOLABEL_H
+#endif // PRIVATEINFOLABEL_H

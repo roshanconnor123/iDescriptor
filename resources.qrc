@@ -31,6 +31,9 @@
         <file>resources/icons/MaterialSymbolsAndroidWifi3BarPlus.png</file>
         <file>resources/icons/IconParkTwotoneMoreTwo.png</file>
         <file>resources/icons/BxBxsTerminal.png</file>
+        <file>resources/icons/ClarityEyeHideLine.png</file>
+        <file>resources/icons/ClarityEyeLine.png</file>
+        <file>resources/icons/MaterialSymbolsLightImageOutlineSharp.png</file>
         <file>qml/MapView.qml</file>
         <file>resources/iphone.png</file>
         <file>resources/ios-wallpapers/iphone-ios4.png</file>

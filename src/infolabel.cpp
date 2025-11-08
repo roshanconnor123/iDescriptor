@@ -75,3 +75,5 @@ void InfoLabel::restoreOriginalText()
     setStyleSheet("QLabel:hover { background-color: rgba(255, 255, 255, 0.1); "
                   "border-radius: 2px; }");
 }
+
+void InfoLabel::setOriginalText(const QString &text) { m_originalText = text; }

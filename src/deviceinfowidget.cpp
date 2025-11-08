@@ -24,6 +24,7 @@
 #include "iDescriptor-ui.h"
 #include "iDescriptor.h"
 #include "infolabel.h"
+#include "privateinfolabel.h"
 #include "toolboxwidget.h"
 #include <QApplication>
 #include <QDebug>
@@ -282,6 +283,24 @@ DeviceInfoWidget::DeviceInfoWidget(iDescriptorDevice *device, QWidget *parent)
         {"Production Device:",
          createValueLabel(QString::fromStdString(
              device->deviceInfo.productionDevice ? "Yes" : "No"))});
+
+    // Serial Number with privacy
+    if (!device->deviceInfo.serialNumber.empty()) {
+        infoItems.append(
+            {"Serial Number:",
+             new PrivateInfoLabel(
+                 QString::fromStdString(device->deviceInfo.serialNumber),
+                 this)});
+    }
+
+    // IMEI with privacy (Mobile Equipment Identifier)
+    if (!device->deviceInfo.mobileEquipmentIdentifier.empty()) {
+        infoItems.append(
+            {"IMEI:", new PrivateInfoLabel(
+                          QString::fromStdString(
+                              device->deviceInfo.mobileEquipmentIdentifier),
+                          this)});
+    }
 
     // Distribute items into the grid
     int numRows = (infoItems.size() + 1) / 2;

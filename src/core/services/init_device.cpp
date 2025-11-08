@@ -104,7 +104,7 @@ void parseOldDevice(PlistNavigator &ioreg, DeviceInfo &d)
     int healthPercent =
         (designCapacity != 0) ? (maxCapacity * 100) / designCapacity : 0;
     healthPercent = std::min(healthPercent, 100);
-    d.batteryInfo.health = QString::number(healthPercent) + "%";
+    d.batteryInfo.health = QString::number(qBound(0, healthPercent, 100)) + "%";
     d.batteryInfo.cycleCount = cycleCount;
     d.batteryInfo.serialNumber = !batterySerialNumber.empty()
                                      ? batterySerialNumber
@@ -322,7 +322,9 @@ DeviceInfo fullDeviceInfo(const pugi::xml_document &doc,
 
         // seems to be to the most accurate way to get health
         d.batteryInfo.health =
-            QString::number((maxCapacity * 100) / designCapacity) + "%";
+            QString::number(
+                qBound<int>(0, (maxCapacity * 100) / designCapacity, 100)) +
+            "%";
         d.batteryInfo.cycleCount = cycleCount;
         d.batteryInfo.serialNumber = !batterySerialNumber.empty()
                                          ? batterySerialNumber

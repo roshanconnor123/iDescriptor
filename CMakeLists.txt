@@ -22,17 +22,18 @@ if(WIN32)
     set(PKG_CONFIG_EXECUTABLE "C:/msys64/mingw64/bin/pkg-config.exe")
     list(APPEND CMAKE_PREFIX_PATH "C:/lxqt")
     set(CUSTOM_LIB_PATH "C:/msys64/mingw64/lib")
-    set(CUSTOM_BIN_PATH "C:/msys64/mingw64/bin")
     set(CUSTOM_INCLUDE_PATH "C:/msys64/mingw64/include")
     set(CUSTOM_PKGCONFIG_PATH "C:/msys64/mingw64/lib/pkgconfig")
-    # Use Windows path separator for environment variables
     set(ENV{PKG_CONFIG_PATH} "${CUSTOM_PKGCONFIG_PATH};$ENV{PKG_CONFIG_PATH}")
-else()
+elseif(APPLE)
     set(CUSTOM_LIB_PATH "/usr/local/lib")
     set(CUSTOM_INCLUDE_PATH "/usr/local/include")
     set(CUSTOM_PKGCONFIG_PATH "/usr/local/lib/pkgconfig")
-    # Use Unix path separator for environment variables
     set(ENV{PKG_CONFIG_PATH} "${CUSTOM_PKGCONFIG_PATH}:$ENV{PKG_CONFIG_PATH}")
+else ()
+    set(CUSTOM_LIB_PATH "/usr/local/lib")
+    set(CUSTOM_PKGCONFIG_PATH "/usr/local/lib/pkgconfig")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:${CUSTOM_PKGCONFIG_PATH}")
 endif()
 
 include_directories(${CUSTOM_INCLUDE_PATH})
@@ -80,24 +81,34 @@ if(WIN32)
     message(STATUS "Found Qt bin directory: ${QT_BIN_PATH}")
 endif()
 
+# Define library search behavior based on platform
+if(LINUX)
+    # On Linux (AUR builds), let CMake search default system paths first.
+    # The custom path /usr/local/lib will be checked if it's in the default search paths.
+    set(CUSTOM_FIND_LIB_ARGS "")
+else()
+    # On other platforms, only search the custom path for our specific libraries.
+    set(CUSTOM_FIND_LIB_ARGS
+        PATHS ${CUSTOM_LIB_PATH}
+        NO_DEFAULT_PATH
+    )
+endif()
+
 find_library(IMOBILEDEVICE_LIBRARY 
     NAMES imobiledevice-1.0
-    PATHS ${CUSTOM_LIB_PATH}
-    NO_DEFAULT_PATH
+    ${CUSTOM_FIND_LIB_ARGS}
     REQUIRED
 )
 
 find_library(IMOBILEDEVICE_GLUE_LIBRARY 
     NAMES imobiledevice-glue-1.0
-    PATHS ${CUSTOM_LIB_PATH}
-    NO_DEFAULT_PATH
+    ${CUSTOM_FIND_LIB_ARGS}
     REQUIRED
 )
 
 find_library(TATSU_LIBRARY 
     NAMES tatsu
-    PATHS ${CUSTOM_LIB_PATH}
-    NO_DEFAULT_PATH
+    ${CUSTOM_FIND_LIB_ARGS}
     REQUIRED
 )
 
@@ -120,8 +131,7 @@ endif()
 
 find_library(USBMUXD_LIBRARY 
     NAMES usbmuxd-2.0
-    PATHS ${CUSTOM_LIB_PATH}
-    NO_DEFAULT_PATH
+    ${CUSTOM_FIND_LIB_ARGS}
     REQUIRED
 )
 
@@ -130,17 +140,8 @@ if(WIN32)
     find_library(SSL_LIBRARY NAMES ssl PATHS C:/msys64/mingw64/lib REQUIRED)
     find_library(CRYPTO_LIBRARY NAMES crypto PATHS C:/msys64/mingw64/lib REQUIRED)
 else()
-    find_library(SSL_LIBRARY 
-        NAMES ssl
-        PATHS /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu
-        REQUIRED
-    )
-
-    find_library(CRYPTO_LIBRARY 
-        NAMES crypto
-        PATHS /usr/local/lib /usr/lib /usr/lib/x86_64-linux-gnu
-        REQUIRED
-    )
+    find_library(SSL_LIBRARY NAMES ssl REQUIRED)
+    find_library(CRYPTO_LIBRARY NAMES crypto REQUIRED)
 endif()
 
 # Add libssh for SSH connections
@@ -322,10 +323,29 @@ set_target_properties(iDescriptor PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
     # Control library search order - system libs first, then /usr/local/lib
-    INSTALL_RPATH "/usr/local/lib:/usr/lib/x86_64-linux-gnu:/usr/lib:$ORIGIN"
-    # INSTALL_RPATH "/usr/local/lib:/usr/lib/"
+    INSTALL_RPATH "/usr/lib/x86_64-linux-gnu:/usr/lib:/usr/local/lib:$ORIGIN"
     BUILD_WITH_INSTALL_RPATH TRUE
 )
+if (UNIX AND NOT APPLE)
+# Add install rules for the project
+include(GNUInstallDirs)
+
+# Install the main executable
+install(TARGETS iDescriptor
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# Install the .desktop file
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/iDescriptor.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+
+# Install the application icon
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/app-icon/icon.png
+    RENAME iDescriptor.png
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+)
+endif()
 
 include(GNUInstallDirs)
 
