@@ -312,7 +312,8 @@ void AppsWidget::handleInit()
             showDefaultApps();
             return;
         }
-#else
+// windows doesn't show any keychain dialog
+#elif __linux__
         CredDialog dialog(this);
         if (dialog.exec() == QDialog::Rejected) {
             // pass empty QJsonObject to skip signing in
