@@ -12,22 +12,27 @@
   <a href="https://github.com/wailsapp/wails/issues">
     <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="CodeFactor" />
   </a>
-  <a href="https://app.fossa.com/projects/git%2Bgithub.com%2Fwailsapp%2Fwails?ref=badge_shield" alt="FOSSA Status">
-    <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Fwailsapp%2Fwails.svg?type=shield" />
-  </a>
-  <a href="https://github.com/avelino/awesome-go" rel="nofollow">
-    <img src="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg" alt="Awesome" />
-  </a>
-  <a href="https://discord.gg/BrRSWTaxVK">
-    <img alt="Discord" src="https://img.shields.io/discord/1042734330029547630?logo=discord"/>
-  </a>
-  <br/>
   <a href="https://github.com/wailsapp/wails/actions/workflows/build-and-test.yml" rel="nofollow">
     <img src="https://img.shields.io/github/actions/workflow/status/wailsapp/wails/build-and-test.yml?branch=master&logo=Github" alt="Build" />
   </a>
-  <a href="https://github.com/wailsapp/wails/tags" rel="nofollow">
-    <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/wailsapp/wails?include_prereleases&label=version"/>
+  <a href="https://github.com/uncor3/libtest/tags" rel="nofollow">
+    <img alt="GitHub tag (latest SemVer pre-release)" src="https://img.shields.io/github/v/tag/uncor3/libtest?include_prereleases&label=version"/>
   </a>
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-blue.svg"/>
+  <img alt="Language" src="https://img.shields.io/badge/C++-20-hotpink.svg"/>
+  <img alt="Qt" src="https://img.shields.io/badge/Qt-6-brightgreen.svg"/>
+  <a href="https://github.com/YourUsername/iDescriptor/releases">
+    <img src="https://img.shields.io/badge/AppImage-available-brightgreen" alt="AppImage"/>
+  </a>
+  <a href="https://aur.archlinux.org/packages/<aur-package-name>">
+    <img src="https://img.shields.io/badge/Arch_Aur-available-brightgreen" alt="AppImage"/>
+  </a>
+  <br/>
+  <br/>
+   <a href="https://aur.archlinux.org/packages/<aur-package-name>">
+    <img src="https://img.shields.io/badge/OpenCollective-1F87FF?style=for-the-badge&logo=OpenCollective&logoColor=white" alt="AppImage"/>
+  </a>
+  <!--  -->
 </p>
 
 <p align="center">
