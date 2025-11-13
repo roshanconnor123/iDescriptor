@@ -48,6 +48,7 @@ jobs:
             mingw-w64-x86_64-curl
             mingw-w64-x86_64-openssl
             mingw-w64-x86_64-libzip
+            mingw-w64-x86_64-libheif
             mingw-w64-x86_64-go
             p7zip
 
