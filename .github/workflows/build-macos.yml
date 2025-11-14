@@ -3,7 +3,7 @@ name: Build macOS
 on:
   workflow_dispatch:
 env:
-  QT_VERSION: "6.7.2"
+  QT_VERSION: "6.8.0"
   GO_VERSION: "1.23.0"
   LIBPLIST_VER: "2.7.0"
   LIBTATSU_VER: "1.0.5"
@@ -36,11 +36,12 @@ jobs:
           version: ${{ env.QT_VERSION }}
           modules: "qtmultimedia qtlocation qtpositioning qtserialport"
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
       - name: Update pkgconfig path
         run: |
-          # ls "${QT_ROOT_DIR}/lib/pkgconfig"
-          # macOS on Apple Silicon uses /opt/homebrew, Intel Macs use /usr/local 
-          # echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
           echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
           echo "CMAKE_PREFIX_PATH=${QT_ROOT_DIR}/lib/cmake:${CMAKE_PREFIX_PATH:-}" >> "$GITHUB_ENV"
 
@@ -69,7 +70,9 @@ jobs:
             gst-plugins-good \
             gst-plugins-bad \
             gst-plugins-ugly \
-            gst-libav
+            gst-libav \
+            graphicsmagick \
+            imagemagick
 
       - name: Compile additional dependencies
         run: |
@@ -176,7 +179,10 @@ jobs:
 
           install_name_tool -add_rpath "@executable_path/../Frameworks" build/iDescriptor.app/Contents/MacOS/iDescriptor
 
-          macdeployqt build/iDescriptor.app -dmg -verbose=2
+      - name: Create DMG
+        run: |
+          npm install -g create-dmg
+          create-dmg --volname "iDescriptor" --window-size 500 300 --icon-size 100 --app-drop-link 400 150 --icon "iDescriptor.app" 100 150 "build/iDescriptor.dmg" "build/iDescriptor.app" --no-code-sign
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
