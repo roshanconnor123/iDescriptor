@@ -462,6 +462,11 @@ if(WIN32)
     set(CPACK_WIX_UI_BANNER "${CMAKE_CURRENT_SOURCE_DIR}/resources/installer/banner.bmp")
     set(CPACK_WIX_UI_DIALOG "${CMAKE_CURRENT_SOURCE_DIR}/resources/installer/dialog.bmp")
 
+    set(CPACK_WIX_PROPERTY_ARPCOMMENTS " Cross platform, open-source and free idevice management tool written in C++.")
+    set(CPACK_WIX_PROPERTY_ARPHELPLINK "${CPACK_PACKAGE_CONTACT}/issues")
+    set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "${CPACK_PACKAGE_CONTACT}")
+    set(CPACK_WIX_PROPERTY_ARPURLUPDATEINFO "${CPACK_PACKAGE_CONTACT}/releases")
+
     set(CPACK_WIX_INSTALL_SCOPE "perMachine")
     set(CPACK_WIX_PROGRAM_MENU_FOLDER "${PROJECT_NAME}")
     set(CPACK_PACKAGE_EXECUTABLES "iDescriptor" "iDescriptor")
