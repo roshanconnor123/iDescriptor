@@ -117,10 +117,10 @@ void FileExplorerWidget::setupSidebar()
 
     QTreeWidgetItem *wallpapersItem = new QTreeWidgetItem(commonPlacesItem);
     QVariantMap dataMap;
-    dataMap["path"] = "../../../var/mobile/Library/Wallpapers";
-    dataMap["alias"] = "Wallpapers";
+    dataMap["path"] = "/DCIM";
+    dataMap["alias"] = "Pictures";
     dataMap["afc2"] = false;
-    wallpapersItem->setText(0, "Wallpapers");
+    wallpapersItem->setText(0, "Pictures");
     wallpapersItem->setIcon(0, QIcon::fromTheme("image-x-generic"));
     wallpapersItem->setData(0, Qt::UserRole, QVariant::fromValue(dataMap));
 

@@ -35,6 +35,9 @@ DevicePendingWidget::DevicePendingWidget(bool locked, QWidget *parent)
         this);
     m_label->setWordWrap(true);
     m_label->setAlignment(Qt::AlignCenter);
+    QFont font = m_label->font();
+    font.setPointSize(18);
+    m_label->setFont(font);
     layout->addWidget(m_label);
 
     m_imageLabel = new ResponsiveQLabel(this);

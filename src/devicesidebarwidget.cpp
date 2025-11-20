@@ -410,7 +410,7 @@ DevicePendingSidebarItem::DevicePendingSidebarItem(const QString &udid,
     layout->setSpacing(1);
 
     QProcessIndicator *spinner = new QProcessIndicator(this);
-    spinner->setFixedSize(32, 32);
+    spinner->setFixedSize(26, 26);
     spinner->setType(QProcessIndicator::line_rotate);
     spinner->start();
 
