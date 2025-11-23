@@ -24,7 +24,7 @@
   <a href="https://github.com/iDescriptor/iDescriptor/releases">
     <img src="https://img.shields.io/badge/AppImage-available-brightgreen" alt="AppImage"/>
   </a>
-  <a href="https://github.com/iDescriptor/iDescriptor/releases">
+  <a href="https://aur.archlinux.org/packages/idescriptor-git">
     <img src="https://img.shields.io/badge/Arch_AUR-available-brightgreen" alt="AppImage"/>
   </a>
   <br/>
