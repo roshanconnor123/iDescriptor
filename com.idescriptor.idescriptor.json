@@ -1,0 +1,282 @@
+{
+  "app-id": "com.idescriptor.idescriptor",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "6.7",
+  "sdk": "org.kde.Sdk",
+  "command": "iDescriptor",
+  "finish-args": [
+    "--socket=x11",
+    "--share=ipc",
+    "--socket=pulseaudio",
+    "--share=network",
+    "--device=all",
+    "--talk-name=org.freedesktop.Avahi",
+    "--talk-name=org.libimobiledevice.usbmuxd",
+    "--system-talk-name=org.libimobiledevice.usbmuxd"
+  ],
+  "modules": [
+    {
+      "name": "lxqt-build-tools",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/app",
+        "cmake --build build",
+        "cmake --install build"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/lxqt/lxqt-build-tools.git"
+        }
+      ]
+    },
+    {
+      "name": "golang",
+      "buildsystem": "simple",
+      "build-options": {
+        "append-path": "/app/sdk/golang/bin",
+        "env": {
+          "GOROOT": "/app/sdk/golang"
+        }
+      },
+      "sources": [
+        {
+          "type": "archive",
+          "only-arches": ["x86_64"],
+          "url": "https://go.dev/dl/go1.25.3.linux-amd64.tar.gz",
+          "sha256": "0335f314b6e7bfe08c3d0cfaa7c19db961b7b99fb20be62b0a826c992ad14e0f",
+          "strip-components": 0
+        },
+        {
+          "type": "archive",
+          "only-arches": ["aarch64"],
+          "url": "https://go.dev/dl/go1.25.3.linux-arm64.tar.gz",
+          "sha256": "1d42ebc84999b5e2069f5e31b67d6fc5d67308adad3e178d5a2ee2c9ff2001f5",
+          "strip-components": 0
+        }
+      ],
+      "build-commands": ["mkdir -p /app/sdk", "mv go /app/sdk/golang"]
+    },
+    {
+      "name": "qtermwidget",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/app",
+        "cmake --build build",
+        "cmake --install build"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/uncor3/qtermwidget.git",
+          "branch": "main"
+        }
+      ]
+    },
+    {
+      "name": "libplist",
+      "buildsystem": "autotools",
+      "config-opts": ["--without-cython"],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libimobiledevice/libplist.git"
+        }
+      ]
+    },
+    {
+      "name": "libimobiledevice-glue",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libimobiledevice/libimobiledevice-glue.git"
+        }
+      ]
+    },
+    {
+      "name": "libtatsu",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libimobiledevice/libtatsu.git"
+        }
+      ]
+    },
+    {
+      "name": "libusb",
+      "config-opts": ["--disable-static"],
+      "cleanup": ["/lib/*.la", "/lib/pkgconfig", "/include"],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/libusb/libusb/releases/download/v1.0.27/libusb-1.0.27.tar.bz2",
+          "sha256": "ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575"
+        }
+      ],
+      "post-install": [
+        "install -Dm644 COPYING ${FLATPAK_DEST}/share/licenses/libusb/COPYING"
+      ]
+    },
+    {
+      "name": "libusbmuxd",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libimobiledevice/libusbmuxd.git"
+        }
+      ]
+    },
+    {
+      "name": "libimobiledevice",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libimobiledevice/libimobiledevice.git"
+        }
+      ]
+    },
+    {
+      "name": "libdaemon",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "archive",
+          "url": "http://0pointer.de/lennart/projects/libdaemon/libdaemon-0.14.tar.gz",
+          "sha256": "fd23eb5f6f986dcc7e708307355ba3289abe03cc381fc47a80bca4a50aa6b834"
+        }
+      ]
+    },
+    {
+      "name": "libevent",
+      "buildsystem": "autotools",
+      "config-opts": [
+        "--disable-samples",
+        "--disable-openssl",
+        "--disable-debug-mode",
+        "--disable-regress",
+        "--disable-libevent-regress",
+        "--disable-test-programs"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libevent/libevent.git"
+        }
+      ]
+    },
+    {
+      "name": "avahi",
+      "buildsystem": "autotools",
+      "config-opts": [
+        "--disable-static",
+        "--disable-mono",
+        "--disable-python",
+        "--disable-qt5",
+        "--disable-gtk",
+        "--disable-gtk3",
+        "--with-distro=none",
+        "--disable-manpages",
+        "--disable-dbus-bus-activation",
+        "--enable-compat-libdns_sd"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/lathiat/avahi.git"
+        }
+      ]
+    },
+    {
+      "name": "libirecovery",
+      "buildsystem": "autotools",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/libimobiledevice/libirecovery.git"
+        }
+      ]
+    },
+    {
+      "name": "libde265",
+      "buildsystem": "autotools",
+      "config-opts": ["--disable-dec265", "--disable-sherlock265"],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/strukturag/libde265.git"
+        }
+      ]
+    },
+    {
+      "name": "libheif",
+      "buildsystem": "cmake-ninja",
+      "config-opts": ["-DWITH_EXAMPLES=OFF"],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/strukturag/libheif.git"
+        }
+      ]
+    },
+    {
+      "name": "libzip",
+      "buildsystem": "cmake-ninja",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/nih-at/libzip.git",
+          "branch": "main"
+        }
+      ]
+    },
+    {
+      "name": "libssh",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/app",
+        "cmake --build build",
+        "cmake --install build"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://www.libssh.org/files/0.11/libssh-0.11.3.tar.xz",
+          "sha256": "7d8a1361bb094ec3f511964e78a5a4dba689b5986e112afabe4f4d0d6c6125c3"
+        }
+      ]
+    },
+    {
+      "name": "pugixml",
+      "buildsystem": "cmake-ninja",
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/zeux/pugixml.git"
+        }
+      ]
+    },
+    {
+      "name": "iDescriptor",
+      "buildsystem": "cmake-ninja",
+      "build-options": {
+        "build-args": ["--share=network"]
+      },
+      "config-opts": [
+        "-DCUSTOM_LIB_PATH=/app/lib",
+        "-DCUSTOM_INCLUDE_PATH=/app/include",
+        "-DCUSTOM_PKGCONFIG_PATH=/app/lib/pkgconfig",
+        "-DGO_EXECUTABLE=/app/sdk/golang/bin/go"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "."
+        }
+      ]
+    }
+  ]
+}
