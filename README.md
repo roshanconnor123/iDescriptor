@@ -25,7 +25,7 @@
     <img src="https://img.shields.io/badge/AppImage-available-brightgreen" alt="AppImage"/>
   </a>
   <a href="https://github.com/iDescriptor/iDescriptor/releases">
-    <img src="https://img.shields.io/badge/Arch_Aur-available-brightgreen" alt="AppImage"/>
+    <img src="https://img.shields.io/badge/Arch_AUR-available-brightgreen" alt="AppImage"/>
   </a>
   <br/>
   <br/>
@@ -168,7 +168,7 @@ Useful if your device does not support AirPlay
 
 ## **Authentication Required** ?
 
-You might get this pop-up on any platform this is because this app uses secure backends to retrieve and store your Apple credentials. You can disabled this in settings but it is not recommended and not safe for your Apple account. Also if you leave this enabled and sign in you can use the same credentials in ipatool without signing in again.
+You might get this pop-up on any platform this is because this app uses secure backends to retrieve and store your Apple credentials. You can disable this in settings but it is not recommended and not safe for your Apple account. Also if you leave this enabled and sign in you can use the same credentials in ipatool without signing in again.
 
 <p align="center">
     <img src="./resources/repo/authentication-required.png"><br/>
