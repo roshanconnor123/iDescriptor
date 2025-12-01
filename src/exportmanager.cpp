@@ -223,7 +223,7 @@ ExportResult ExportManager::exportSingleItem(iDescriptorDevice *device,
     plist_t info = nullptr;
     afc_error_t infoResult = ServiceManager::safeAfcGetFileInfoPlist(
         device, item.sourcePathOnDevice.toUtf8().constData(), &info, altAfc);
-    int totalFileSize = 0;
+    quint64 totalFileSize = 0;
     if (infoResult != AFC_E_SUCCESS || !info) {
         qDebug() << "File info retrieval failed for" << item.sourcePathOnDevice;
         return result;
@@ -234,16 +234,19 @@ ExportResult ExportManager::exportSingleItem(iDescriptorDevice *device,
     bool valid = fileInfo["st_size"].valid();
     if (!valid) {
         qDebug() << "File size info not valid for" << item.sourcePathOnDevice;
+        if (info)
+            plist_free(info);
         return result;
     }
 
-    // make sure st_size is a float
     totalFileSize = fileInfo["st_size"].getUInt();
 
     valid = fileInfo["st_mtime"].valid();
     if (!valid) {
         qDebug() << "File modification time info not valid for"
                  << item.sourcePathOnDevice;
+        if (info)
+            plist_free(info);
         return result;
     }
 
@@ -255,6 +258,8 @@ ExportResult ExportManager::exportSingleItem(iDescriptorDevice *device,
     if (!valid) {
         qDebug() << "File birth time info not valid for"
                  << item.sourcePathOnDevice;
+        if (info)
+            plist_free(info);
         return result;
     }
     uint64_t birthTimeNs = fileInfo["st_birthtime"].getUInt();
@@ -288,7 +293,7 @@ ExportResult ExportManager::exportSingleItem(iDescriptorDevice *device,
 
     char buffer[8192];
     uint32_t bytesRead = 0;
-    qint64 totalBytes = 0;
+    quint64 totalBytes = 0;
 
     while (true) {
         // Check for cancellation during file copy
