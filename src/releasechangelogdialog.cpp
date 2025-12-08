@@ -1,5 +1,3 @@
-
-
 /*
  * iDescriptor: A free and open-source idevice management tool.
  *
@@ -25,6 +23,8 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QDesktopServices>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
 #include <QPushButton>
