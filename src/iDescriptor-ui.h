@@ -21,7 +21,6 @@
 #include "settingsmanager.h"
 #include <QAbstractButton>
 #include <QApplication>
-// #include <QDesktopWidget>  // Qt6: removed, use QScreen
 #include <QGraphicsView>
 #include <QGuiApplication>
 #include <QLabel>
@@ -46,36 +45,6 @@
 #define COLOR_BLUE QColor("#2b5693")
 #define COLOR_ACCENT_BLUE QColor("#0b5ed7")
 
-class ScaledSize
-{
-public:
-    static QSize getScaledSize(const QSize &size)
-    {
-        return {static_cast<int>(size.width() * getXScaleFactor()),
-                static_cast<int>(size.height() * getYScaleFactor())};
-    }
-
-    static qreal getXScaleFactor()
-    {
-        QScreen *screen = QGuiApplication::primaryScreen();
-        if (!screen)
-            return 1.0;
-        return screen->logicalDotsPerInchX() / getReferenceDpiValue();
-    }
-    static qreal getYScaleFactor()
-    {
-        QScreen *screen = QGuiApplication::primaryScreen();
-        if (!screen)
-            return 1.0;
-        return screen->logicalDotsPerInchY() / getReferenceDpiValue();
-    }
-
-private:
-    static qreal getReferenceDpiValue() { return 96.0; }
-};
-
-// A custom QGraphicsView that keeps the content fitted with aspect ratio on
-// resize
 class ResponsiveGraphicsView : public QGraphicsView
 {
 public:
@@ -104,8 +73,6 @@ signals:
     void clicked();
 
 protected:
-    // On mouse release, if the click is inside the widget, emit the clicked
-    // signal
     void mouseReleaseEvent(QMouseEvent *event) override
     {
         if (event->button() == Qt::LeftButton &&
@@ -126,43 +93,45 @@ public:
 
     void setThemable(bool themable) { m_themable = themable; }
 
-    QPixmap getThemedPixmap(const QSize &size, const QPalette &palette) const
+    QPixmap getThemedPixmap(const QSize &logicalSize, const QPalette &palette,
+                            qreal dpr = 1.0) const
     {
-        // If not themable, return the original pixmap without color filling.
-        if (!m_themable) {
-            return QIcon::pixmap(size);
-        }
+        QSize physical = logicalSize * dpr;
 
-        QPixmap pixmap = QIcon::pixmap(size);
-        if (pixmap.isNull()) {
+        QPixmap pixmap = QIcon::pixmap(physical);
+        if (pixmap.isNull())
             return pixmap;
-        }
 
-        // Get the appropriate icon color based on theme
+        pixmap.setDevicePixelRatio(dpr);
+
+        if (!m_themable)
+            return pixmap;
+
+        // theme color
         QColor iconColor = palette.color(QPalette::WindowText);
 
-        // Create a colored version of the icon
-        QPixmap coloredPixmap(pixmap.size());
-        coloredPixmap.fill(Qt::transparent);
+        QPixmap colored(pixmap.size());
+        colored.setDevicePixelRatio(dpr);
+        colored.fill(Qt::transparent);
 
-        QPainter iconPainter(&coloredPixmap);
-        iconPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-        iconPainter.drawPixmap(0, 0, pixmap);
-        iconPainter.setCompositionMode(QPainter::CompositionMode_SourceIn);
-        iconPainter.fillRect(coloredPixmap.rect(), iconColor);
+        QPainter p(&colored);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.drawPixmap(0, 0, pixmap);
+        p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+        p.fillRect(colored.rect(), iconColor);
+        p.end();
 
-        return coloredPixmap;
+        return colored;
     }
 
-    void paint(QPainter *painter, const QRect &rect,
-               const QPalette &palette) const
+    void paint(QPainter *painter, const QRect &logicalRect,
+               const QPalette &palette, qreal dpr = 1.0) const
     {
-        QPixmap themedPixmap = getThemedPixmap(rect.size(), palette);
-        if (!themedPixmap.isNull()) {
-            painter->drawPixmap(rect, themedPixmap);
-        } else {
-            QIcon::paint(painter, rect);
-        }
+        QPixmap pm = getThemedPixmap(logicalRect.size(), palette, dpr);
+        if (pm.isNull())
+            return;
+
+        painter->drawPixmap(logicalRect, pm);
     }
 
 private:
@@ -178,23 +147,22 @@ public:
         : QAbstractButton(parent), m_icon(icon),
           m_iconSizeMultiplier(iconSizeMultiplier)
     {
-        if (tooltip != "") {
+        if (!tooltip.isEmpty())
             setToolTip(tooltip);
-        }
 
-        QFontMetrics fm(font());
-        double baseSize =
-            fm.height() * m_iconSizeMultiplier *
-            SettingsManager::sharedInstance()->iconSizeBaseMultiplier();
-        int intBaseSize = qRound(baseSize);
-        m_iconSize = QSize(intBaseSize, intBaseSize);
-        setFixedSize(ScaledSize::getScaledSize(
-            QSize(intBaseSize + 10, intBaseSize + 10)));
-
-        update();
+        updateIconSize();
         setCursor(Qt::PointingHandCursor);
+
         connect(qApp, &QApplication::paletteChanged, this,
-                [this]() { update(); });
+                [this] { update(); });
+        connect(qApp, &QApplication::fontChanged, this,
+                [this] { updateIconSize(); });
+    }
+
+    void setIcon(const ZIcon &icon)
+    {
+        m_icon = icon;
+        update();
     }
 
     void setIconSizeMultiplier(qreal multiplier)
@@ -203,24 +171,17 @@ public:
         updateIconSize();
     }
 
-    void setIcon(const QIcon &icon)
-    {
-        m_icon = ZIcon(icon);
-        update();
-    }
-
 protected:
     void paintEvent(QPaintEvent *event) override
     {
-        Q_UNUSED(event)
+        Q_UNUSED(event);
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        // Draw background circle when hovered or pressed
         if (underMouse() || isDown()) {
-            QColor bgColor = palette().color(QPalette::Highlight);
-            bgColor.setAlpha(isDown() ? 60 : 30);
-            painter.setBrush(bgColor);
+            QColor bg = palette().color(QPalette::Highlight);
+            bg.setAlpha(isDown() ? 60 : 30);
+            painter.setBrush(bg);
             painter.setPen(Qt::NoPen);
             painter.drawEllipse(rect().adjusted(2, 2, -2, -2));
         }
@@ -229,22 +190,21 @@ protected:
         iconRect.setSize(m_iconSize);
         iconRect.moveCenter(rect().center());
 
-        m_icon.paint(&painter, iconRect, palette());
+        m_icon.paint(&painter, iconRect, palette(), devicePixelRatioF());
     }
 
 private:
     void updateIconSize()
     {
         QFontMetrics fm(font());
-        double baseSize =
-            fm.height() * m_iconSizeMultiplier *
-            SettingsManager::sharedInstance()->iconSizeBaseMultiplier();
-        int intBaseSize = qRound(baseSize);
+        int base =
+            qRound(fm.height() * m_iconSizeMultiplier *
+                   SettingsManager::sharedInstance()->iconSizeBaseMultiplier());
 
-        setFixedSize(ScaledSize::getScaledSize(
-            QSize(intBaseSize + 10, intBaseSize + 10)));
+        m_iconSize = QSize(base, base);
 
-        m_iconSize = QSize(intBaseSize, intBaseSize);
+        setFixedSize(base + 10, base + 10);
+
         update();
     }
 
@@ -298,23 +258,21 @@ protected:
         iconRect.setSize(m_iconSize);
         iconRect.moveCenter(rect().center());
 
-        m_icon.paint(&painter, iconRect, palette());
+        m_icon.paint(&painter, iconRect, palette(), devicePixelRatioF());
     }
 
 private:
     void updateIconSize()
     {
         QFontMetrics fm(font());
-        double baseSize =
-            fm.height() * m_iconSizeMultiplier *
-            SettingsManager::sharedInstance()->iconSizeBaseMultiplier();
-        int intBaseSize = qRound(baseSize);
+        int base =
+            qRound(fm.height() * m_iconSizeMultiplier *
+                   SettingsManager::sharedInstance()->iconSizeBaseMultiplier());
 
-        // Make label DPI-aware too
-        setFixedSize(ScaledSize::getScaledSize(
-            QSize(intBaseSize + 10, intBaseSize + 10)));
+        m_iconSize = QSize(base, base);
 
-        m_iconSize = QSize(intBaseSize, intBaseSize);
+        setFixedSize(base + 10, base + 10);
+
         update();
     }
 
